@@ -18,7 +18,7 @@ t = transpose(linspace(0,len/Fs,len));
 sig_V = sig_mV * 1e-3;
 
 % Write to file compatible with LTspice:
-% Comma-separated rows with no headers
+% File containing comma-separated rows with no headers
 file_id = fopen(DATA_FILE,'w');
 for k = 1:len
    fprintf(file_id, '%6.6f,%6.6f\n' , t(k), sig_V(k));
