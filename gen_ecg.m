@@ -26,10 +26,8 @@ end
 fclose(file_id);
 
 % Print figure
-hf = figure();
 plot(t, sig_mV);
 title('Simulated ECG signal');
 xlabel('Time (s)');
 ylabel('Potential (mV)');
 axis([0 t(len)]);
-print(hf, 'ecg.png');
