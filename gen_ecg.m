@@ -2,18 +2,34 @@
 pkg load signal
 
 % Parameters
-SAMPLING_FREQ_HZ = 256;
+Fs = 256;
 NUM_BEATS = 10;
-FILENAME = 'ecg.txt';
+DATA_FILE = 'ecg.txt';
 
-ecg_mv = ecgsyn(SAMPLING_FREQ_HZ, NUM_BEATS);
+% Generate ECG signal
+sig_mV = ecgsyn(Fs, NUM_BEATS);
 
-% Output of ecgsyn() is in millivolts so convert to volts
-ecg = ecg_mv * 1e-3;
+len = length(sig_mV);
 
-% Write to file compatible with LTspice
-file_id = fopen(FILENAME,'w');
-for k = 1: length(ecg)
-   fprintf(file_id, '%6.6f,%6.6f\n' , (k-1)/SAMPLING_FREQ_HZ, ecg(k));
+% Create time vector, in seconds
+t = transpose(linspace(0,len/Fs,len));
+
+% Create signal vector, in volts
+sig_V = sig_mV * 1e-3;
+
+% Write to file compatible with LTspice:
+% Comma-separated rows with no headers
+file_id = fopen(DATA_FILE,'w');
+for k = 1:len
+   fprintf(file_id, '%6.6f,%6.6f\n' , t(k), sig_V(k));
 end
 fclose(file_id);
+
+% Print figure
+hf = figure();
+plot(t, sig_mV);
+title('Simulated ECG signal');
+xlabel('Time (s)');
+ylabel('Potential (mV)');
+axis([0 t(len)]);
+print(hf, 'ecg.png');

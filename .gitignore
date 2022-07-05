@@ -4,3 +4,6 @@ ecg.txt
 # LTspice files
 *.log
 *.raw
+
+# Other
+*.png
