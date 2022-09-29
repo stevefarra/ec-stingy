@@ -1,10 +1,7 @@
-% Required by ecgsyn.m to run
-pkg load signal
-
 % Parameters
+DATA_FILE = 'ecg.txt';
 Fs = 256;
 NUM_BEATS = 10;
-DATA_FILE = 'ecg.txt';
 
 % Generate ECG signal
 sig_mV = ecgsyn(Fs, NUM_BEATS);
@@ -30,4 +27,3 @@ plot(t, sig_mV);
 title('Simulated ECG signal');
 xlabel('Time (s)');
 ylabel('Potential (mV)');
-axis([0 t(len)]);
