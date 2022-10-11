@@ -1,3 +1,5 @@
+pkg load signal
+
 % Parameters
 DATA_FILE = 'ecg.txt';
 Fs = 256;
