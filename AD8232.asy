@@ -5,7 +5,7 @@ WINDOW 0 0 -168 Bottom 2
 WINDOW 3 0 168 Top 2
 SYMATTR Prefix X
 SYMATTR Value AD8232
-SYMATTR ModelFile /Users/Steve/Repositories/ec-stingy/AD8232.cir
+SYMATTR ModelFile D:\Repositories\ec-stingy\AD8232.cir
 PIN -144 -144 LEFT 8
 PINATTR PinName HPDRIVE
 PINATTR SpiceOrder 1
