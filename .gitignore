@@ -5,3 +5,6 @@ ecg.txt
 *.log
 *.raw
 *.net
+
+# STM32 metadata
+.metadata/
