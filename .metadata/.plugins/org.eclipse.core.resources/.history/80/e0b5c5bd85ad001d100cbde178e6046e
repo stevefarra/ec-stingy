@@ -107,7 +107,7 @@ int main(void)
 	  raw = HAL_ADC_GetValue(&hadc1);
 
 	  // Convert to string and print
-	  sprintf(msg, "%hu\r\n", raw);
+	  sprintf(msg, "%hu\n", raw);
 	  HAL_UART_Transmit(&huart2, (uint8_t*)msg, strlen(msg), HAL_MAX_DELAY);
 
 	  // Pretend we have to do something else for a while
