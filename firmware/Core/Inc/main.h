@@ -36,7 +36,8 @@ extern "C" {
 
 /* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
-
+typedef uint32_t dataType;
+typedef enum {false, true} bool;
 /* USER CODE END ET */
 
 /* Exported constants --------------------------------------------------------*/
@@ -61,6 +62,10 @@ void Error_Handler(void);
 #define PUSHBUTTON_GPIO_Port GPIOC
 #define MCO_Pin GPIO_PIN_0
 #define MCO_GPIO_Port GPIOF
+#define LED_Pin GPIO_PIN_5
+#define LED_GPIO_Port GPIOA
+#define DEBUG_Pin GPIO_PIN_10
+#define DEBUG_GPIO_Port GPIOA
 #define TMS_Pin GPIO_PIN_13
 #define TMS_GPIO_Port GPIOA
 #define TCK_Pin GPIO_PIN_14
