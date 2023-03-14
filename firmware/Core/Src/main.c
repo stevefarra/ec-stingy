@@ -32,16 +32,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define WINDOWSIZE 20   // Integrator window size, in samples. The article recommends 150ms. So, FS*0.15.
-						// However, you should check empirically if the waveform looks ok.
-#define NOSAMPLE -32000 // An indicator that there are no more samples to read. Use an impossible value for a sample.
-#define FS 360          // Sampling frequency.
-#define BUFFSIZE 600    // The size of the buffers (in samples). Must fit more than 1.66 times an RR interval, which
-                        // typically could be around 1 second.
 
-#define DELAY 22		// Delay introduced by the filters. Filter only output samples after this one.
-						// Set to 0 if you want to keep the delay. Fixing the delay results in DELAY less samples
-						// in the final end result.
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -84,6 +75,7 @@ int main(void)
   /* USER CODE BEGIN 1 */
 
 	uint16_t tim6_val;
+
 	uint16_t raw;
 	char msg[10];
 
@@ -124,8 +116,11 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  // Check if 1 ms has elapsed
-	  if (__HAL_TIM_GET_COUNTER(&htim6) - tim6_val >= 10) {
+	  // Check if 500 us has elapsed.
+	  // Serial oscilloscope shows a sample rate of ~900 Hz (just shy of 1 kHz target)
+	  // when timer is set to 2 kHz, possibly due to either serial delays or a bug with
+	  // the serial oscilloscope program (less likely). Revisit this later
+	  if (__HAL_TIM_GET_COUNTER(&htim6) - tim6_val >= 5) {
 
 		  // Read value from ADC
 		  HAL_ADC_Start(&hadc1);

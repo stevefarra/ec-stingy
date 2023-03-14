@@ -27,23 +27,23 @@ Idx Name          Size      VMA       LMA       File off  Algn
                   ALLOC
  11 .ARM.attributes 00000028  00000000  00000000  00020070  2**0
                   CONTENTS, READONLY
- 12 .debug_info   0001218a  00000000  00000000  00020098  2**0
+ 12 .debug_info   00012189  00000000  00000000  00020098  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 13 .debug_abbrev 00002326  00000000  00000000  00032222  2**0
+ 13 .debug_abbrev 00002326  00000000  00000000  00032221  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
  14 .debug_aranges 00000f58  00000000  00000000  00034548  2**3
                   CONTENTS, READONLY, DEBUGGING, OCTETS
  15 .debug_ranges 00000e80  00000000  00000000  000354a0  2**3
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 16 .debug_macro  000176c9  00000000  00000000  00036320  2**0
+ 16 .debug_macro  000176ab  00000000  00000000  00036320  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 17 .debug_line   00012019  00000000  00000000  0004d9e9  2**0
+ 17 .debug_line   00012019  00000000  00000000  0004d9cb  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 18 .debug_str    0009848c  00000000  00000000  0005fa02  2**0
+ 18 .debug_str    00098451  00000000  00000000  0005f9e4  2**0
                   CONTENTS, READONLY, DEBUGGING, OCTETS
- 19 .comment      00000050  00000000  00000000  000f7e8e  2**0
+ 19 .comment      00000050  00000000  00000000  000f7e35  2**0
                   CONTENTS, READONLY
- 20 .debug_frame  00003bac  00000000  00000000  000f7ee0  2**2
+ 20 .debug_frame  00003bac  00000000  00000000  000f7e88  2**2
                   CONTENTS, READONLY, DEBUGGING, OCTETS
 
 Disassembly of section .text:
@@ -543,8 +543,8 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  // Check if 1 ms has elapsed
-	  if (__HAL_TIM_GET_COUNTER(&htim6) - tim6_val >= 10) {
+	  // Check if 500 us has elapsed
+	  if (__HAL_TIM_GET_COUNTER(&htim6) - tim6_val >= 5) {
  8000442:	4b1a      	ldr	r3, [pc, #104]	; (80004ac <main+0x9c>)
  8000444:	681b      	ldr	r3, [r3, #0]
  8000446:	6a5a      	ldr	r2, [r3, #36]	; 0x24
@@ -552,7 +552,7 @@ int main(void)
  800044a:	193b      	adds	r3, r7, r4
  800044c:	881b      	ldrh	r3, [r3, #0]
  800044e:	1ad3      	subs	r3, r2, r3
- 8000450:	2b09      	cmp	r3, #9
+ 8000450:	2b04      	cmp	r3, #4
  8000452:	d9f6      	bls.n	8000442 <main+0x32>
 
 		  // Read value from ADC
@@ -603,7 +603,7 @@ int main(void)
  80004a4:	6a5a      	ldr	r2, [r3, #36]	; 0x24
  80004a6:	193b      	adds	r3, r7, r4
  80004a8:	801a      	strh	r2, [r3, #0]
-	  if (__HAL_TIM_GET_COUNTER(&htim6) - tim6_val >= 10) {
+	  if (__HAL_TIM_GET_COUNTER(&htim6) - tim6_val >= 5) {
  80004aa:	e7ca      	b.n	8000442 <main+0x32>
  80004ac:	200000f0 	.word	0x200000f0
  80004b0:	2000008c 	.word	0x2000008c

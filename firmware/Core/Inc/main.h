@@ -36,8 +36,7 @@ extern "C" {
 
 /* Exported types ------------------------------------------------------------*/
 /* USER CODE BEGIN ET */
-typedef uint32_t dataType;
-typedef enum {false, true} bool;
+
 /* USER CODE END ET */
 
 /* Exported constants --------------------------------------------------------*/
