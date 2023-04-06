@@ -21,17 +21,26 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+
 #include <string.h>
 #include <stdio.h>
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
 
+typedef uint16_t dataType;
+typedef enum {false, true} bool;
+
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+
+#define MHZ_TIMER &htim6
+#define ECG_ADC &hadc1
+#define SIG_UART &huart2
 
 /* USER CODE END PD */
 
@@ -49,6 +58,8 @@ UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
 
+uint16_t counter_1ms;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -58,6 +69,12 @@ static void MX_ADC1_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_TIM6_Init(void);
 /* USER CODE BEGIN PFP */
+
+void init_1ms_counter(void);
+bool elapsed_1ms(void);
+void reset_1ms_counter(void);
+dataType input(void);
+void output(dataType data);
 
 /* USER CODE END PFP */
 
@@ -74,10 +91,7 @@ int main(void)
 {
   /* USER CODE BEGIN 1 */
 
-	uint16_t tim6_val;
-
-	uint16_t raw;
-	char msg[10];
+	dataType data;
 
   /* USER CODE END 1 */
 
@@ -104,11 +118,7 @@ int main(void)
   MX_TIM6_Init();
   /* USER CODE BEGIN 2 */
 
-  // Start TIM6 (10 kHz)
-  HAL_TIM_Base_Start(&htim6);
-
-  // Capture current value of TIM6 (microseconds)
-  tim6_val = __HAL_TIM_GET_COUNTER(&htim6);
+  init_1ms_counter();
 
   /* USER CODE END 2 */
 
@@ -116,23 +126,14 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  // Check if 500 us has elapsed.
-	  // Serial oscilloscope shows a sample rate of ~900 Hz (just shy of 1 kHz target)
-	  // when timer is set to 2 kHz, possibly due to either serial delays or a bug with
-	  // the serial oscilloscope program (less likely). Revisit this later
-	  if (__HAL_TIM_GET_COUNTER(&htim6) - tim6_val >= 5) {
+	  if (elapsed_1ms()) {
+		  reset_1ms_counter();
 
-		  // Read value from ADC
-		  HAL_ADC_Start(&hadc1);
-		  HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
-		  raw = HAL_ADC_GetValue(&hadc1);
+		  // DEBUG: Toggle pin to ensure loop is being entered at the correct frequency
+		  HAL_GPIO_TogglePin(DEBUG_GPIO_Port, DEBUG_Pin);
 
-		  // Convert to string and print
-		  sprintf(msg, "%hu\r\n", raw);
-		  HAL_UART_Transmit(&huart2, (uint8_t*)msg, strlen(msg), HAL_MAX_DELAY);
-
-		  // Reset counter
-		  tim6_val = __HAL_TIM_GET_COUNTER(&htim6);
+		  data = input();
+		  output(data);
 	  }
     /* USER CODE END WHILE */
 
@@ -258,7 +259,7 @@ static void MX_TIM6_Init(void)
 
   /* USER CODE END TIM6_Init 1 */
   htim6.Instance = TIM6;
-  htim6.Init.Prescaler = 1600-1;
+  htim6.Init.Prescaler = 16-1;
   htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim6.Init.Period = 65536-1;
   htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
@@ -334,6 +335,8 @@ static void MX_USART2_UART_Init(void)
 static void MX_GPIO_Init(void)
 {
   GPIO_InitTypeDef GPIO_InitStruct = {0};
+/* USER CODE BEGIN MX_GPIO_Init_1 */
+/* USER CODE END MX_GPIO_Init_1 */
 
   /* GPIO Ports Clock Enable */
   __HAL_RCC_GPIOC_CLK_ENABLE();
@@ -356,9 +359,42 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
+/* USER CODE BEGIN MX_GPIO_Init_2 */
+/* USER CODE END MX_GPIO_Init_2 */
 }
 
 /* USER CODE BEGIN 4 */
+
+void init_1ms_counter(void) {
+
+	// Start the timer being used for the 1 ms counter
+	HAL_TIM_Base_Start(MHZ_TIMER);
+
+	// Set the counter
+	counter_1ms = __HAL_TIM_GET_COUNTER(MHZ_TIMER);
+}
+
+bool elapsed_1ms(void) {
+	return __HAL_TIM_GET_COUNTER(MHZ_TIMER) - counter_1ms >= 1000 ? true : false;
+}
+
+void reset_1ms_counter(void) {
+	counter_1ms = __HAL_TIM_GET_COUNTER(MHZ_TIMER);
+}
+
+dataType input(void) {
+	HAL_ADC_Start(ECG_ADC);
+	HAL_ADC_PollForConversion(ECG_ADC, HAL_MAX_DELAY);
+
+	return (dataType) HAL_ADC_GetValue(ECG_ADC);
+}
+
+void output(dataType data) {
+	char msg[10];
+
+	sprintf(msg, "%hu\r\n", data);
+	HAL_UART_Transmit(SIG_UART, (uint8_t*) msg, strlen(msg), HAL_MAX_DELAY);
+}
 
 /* USER CODE END 4 */
 
