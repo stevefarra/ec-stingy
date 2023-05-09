@@ -3,7 +3,7 @@ clear;
 % Load the ECG signal
 data_file = 'scope.csv';
 data = csvread(data_file);
-ECG = data(:,1);
+x = data(:,1);
 Fs = 360; % Sampling frequency
 
 % Algorithm parameters
@@ -11,21 +11,19 @@ N = 25;      % High-pass filter parameter
 s = 7;       % Triangle template matching parameter
 L = 5;       % Low-pass filter parameter
 beta = 2.5;  % Modified threshold calculation parameter
-M = 150;     % Modified threshold calculation parameter
+M = int32(150);     % Modified threshold calculation parameter
 
-% Initialize output signals
-y_hat = zeros(length(ECG), 1);
-y = zeros(length(ECG), 1);
-t = zeros(length(ECG), 1);
-l = zeros(length(ECG), 1);
-l_avg = zeros(length(ECG), 1);
-th = zeros(length(ECG), 1);
+x_bar = zeros(length(x), 1);
+y = zeros(length(x), 1);
+t = zeros(length(x), 1);
+l = zeros(length(x), 1);
+ma = zeros(length(x), 1);
+theta = zeros(length(x), 1);
+th = zeros(length(x), 1);
 
 % Implement the high-pass filter
-for i = N+1:length(ECG)-N-1
-    y_hat(i+1) = y_hat(i) + ECG(i+1) - ECG(i) + 1/(2*N+1)*(ECG(i-N) - ECG(i+N+1));
-    y(i) = abs(y_hat(i));
-end
+x_bar = movmean(x, 2*N + 1);
+y = abs(x - x_bar);
 
 % Implement the triangle template matching
 for i = s+1:length(y)-s
@@ -33,19 +31,12 @@ for i = s+1:length(y)-s
 end
 
 % Implement the low-pass filter
-for i = L+1:length(t)-L-1
-    l(i+1) = l(i) + 1/(2*L+1)*(t(i+L+1) - t(i-L));
-end
-
-% Initialize the modified threshold calculation
-theta = mean(l)/4;
-l_avg(M+1) = sum(l(1:2*M+1)) / (2*M+1);
+l = movmean(t, 2*L + 1);
 
 % Implement the modified threshold calculation
-for i = M+1:length(l)-M-1
-    l_avg(i+1) = l_avg(i) + 1/(2*M+1)*(l(i+M+1) - l(i-M));
-    th(i) = beta * l_avg(i) + theta;
-end
+ma = movmean(l, 2*M + 1);
+theta = mean(l)/4;
+th = beta*ma + theta;
 
 % Peak detection initialization
 buffer = [];
@@ -85,13 +76,13 @@ for i = 1:length(l)
 end
 
 % Plot the signals on separate subplots in the same figure
-t_plot = (1:length(ECG)) / Fs;
+t_plot = (1:length(x)) / Fs;
 r_peak_times = r_peaks / Fs;
 
 figure;
 % Original ECG signal
 subplot(4,1,1);
-plot(t_plot, ECG);
+plot(t_plot, x);
 xlabel('Time (s)');
 ylabel('Amplitude');
 title('Original ECG Signal');

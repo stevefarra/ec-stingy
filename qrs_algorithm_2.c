@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <math.h>
 
 #define DATA_FILE   "scope.csv"
 #define OUTPUT_FILE "output.csv"
@@ -14,19 +15,33 @@
 #define BETA      2.5 // Dynamic threshold coefficient
 #define M         150 // Moving average window size for dynamic threshold calculation
 
-#define HIGHPASS_DELAY  2*N + 1
-#define TRIANGLE_DELAY  (HIGHPASS_DELAY + 2*S + 1)
-#define LOWPASS_DELAY   (TRIANGLE_DELAY + 2*L + 1)
-#define THRESHOLD_DELAY (LOWPASS_DELAY + 2*M + 1)
-
-#define VOIDED -1
-
 typedef enum {
     FALSE,
     TRUE
 } bool;
 
 int main() {
+
+    // Signal buffers
+    float val,
+          x    [BUFF_SIZE],
+          x_bar[BUFF_SIZE],
+          y_hat[BUFF_SIZE],
+          y    [BUFF_SIZE];
+
+    // Indices
+    unsigned short i,
+                   samples_read = 0,
+                   x_idx        = 0,
+                   highpass_idx = N;
+
+    // Flags
+    bool highpass = FALSE;
+
+    // Moving average variables
+    float sum;
+    short j;
+
     // Open the data file
     FILE *input_file = fopen(DATA_FILE, "r");
     if (input_file == NULL) {
@@ -42,125 +57,62 @@ int main() {
         return 1;
     }
 
-    // Declare signal buffers
-    float val,
-          ecg  [BUFF_SIZE],
-          h_hat[BUFF_SIZE],
-          h    [BUFF_SIZE],
-          t    [BUFF_SIZE],
-          l    [BUFF_SIZE],
-          mean [BUFF_SIZE],
-          ma   [BUFF_SIZE],
-          th   [BUFF_SIZE];
-
-    // Initialize indices
-    unsigned short i,
-                   samples_read = 0,
-                   ecg_idx      = 0,
-                   h_idx        = ecg_idx - N,
-                   t_idx,
-                   l_idx,
-                   mean_idx,
-                   th_idx;
-
-    // Initialize flags
-    bool highpass  = FALSE;
-    bool triangle  = FALSE;
-    bool lowpass   = FALSE;
-    bool threshold = FALSE;
-
     // Clear buffers
     for (i = 0; i < BUFF_SIZE; i++) {
-        ecg[i]   = 0;
-        h_hat[i] = 0;
-        h[i]     = 0;
-        t[i]     = 0;
-        l[i]     = 0;
-        ma[i]    = 0;
-        th[i]    = 0;
+        x[i]     = 0.0;
+        x_bar[i] = 0.0;
+        y_hat[i] = 0.0;
+        y[i]     = 0.0;
     }
 
     // Read data from file and store in buffer, then write to output file
     while (fscanf(input_file, "%f,%*s", &val) != EOF) {
 
         // If the ECG buffer is full,
-        if (ecg_idx == BUFF_SIZE) {
+        if (x_idx == BUFF_SIZE) {
 
             // Shift the buffers
-            for (i = 1; i < BUFF_SIZE; i++) {
-                ecg  [i - 1] = ecg  [i];
-                h_hat[i - 1] = h_hat[i];
-                h    [i - 1] = h    [i];
-                t    [i - 1] = t    [i];
-                l    [i - 1] = l    [i];
-                mean [i - 1] = mean [i];
-                ma   [i - 1] = ma   [i];
-                th   [i - 1] = th   [i];
+            for (i = 0; i < BUFF_SIZE - 1; i++) {
+                x    [i] = x    [i + 1];
+                x_bar[i] = x_bar[i + 1];
+                y_hat[i] = y_hat[i + 1];
+                y    [i] = y    [i + 1];
             }
             // Decrement the indices
-            ecg_idx--;
-            h_idx--;
-            t_idx--;
-            l_idx--;
-            mean_idx--;
-            th_idx--;
+            x_idx--;
+            highpass_idx--;
         }
         // Add the sample to the buffer and increment the index
-        i = ecg_idx++;
-        ecg[i] = val;
+        i = x_idx++;
+        x[i] = val;
+        samples_read++;
 
-        // If the samples read counter is still in use, increment it
-        if (samples_read != VOIDED) {
-            samples_read++;
+        if (samples_read >= (2*N + 1) && samples_read < 2269 - (N + 1)) {
+            highpass = TRUE;
+        } else {
+            highpass = FALSE;
         }
-        // if (samples_read == HIGHPASS_DELAY) {
-        //     highpass = TRUE;
-        //     h_idx = ecg_idx - N;
-        // }
-        // if (samples_read == TRIANGLE_DELAY) {
-        //     triangle = TRUE;
-        //     t_idx = h_idx - S;
-        // }
-        // if (samples_read == LOWPASS_DELAY) {
-        //     lowpass = TRUE;
-        //     l_idx = t_idx - L;
-        // }
-        // if (samples_read == THRESHOLD_DELAY) {
-        //     threshold = TRUE;
-        //     th_idx = l_idx - M;
-        // }
-
-        // h[i] = h_hat[i - 1] + ecg[i] - ecg[i - 1] + (ecg[i - (N + 1)] - ecg[i + N])/(2*N + 1)
         if (highpass) {
-            i = h_idx++;
-            val = 0.0; 
-
-            if (i >= 0) {
-                val += ecg[i];
-                val -= ecg[i + N]/(2*N + 1);
-            }
-            if (i >= 1) {
-                val += h_hat[i - 1];
-                val -= ecg[i - 1];    
-            }
-            if (i >= N + 1) {
-                val += ecg[i - (N + 1)]/(2*N + 1);
-            }
+            i = highpass_idx++;
             
-            h_hat[i] = val;
-            h[i] = abs(val);
+            if (i == N) {
+                sum = 0;
+
+                for (j = -N; j <= N; j++) {
+                    sum += x[i + j];
+                }
+                val = sum / (2*N + 1);
+            } else {
+                val = x_bar[i - 1] + (x[i + N] - x[i - (N + 1)])/(2*N + 1);
+            }
+            x_bar[i] = val;
+            y_hat[i] = x[i] - x_bar[i];
+            y[i] = fabs(y_hat[i]);
         }
-        // if (triangle) {
-        //     i = t_idx++;
-        //     val = (h[i] - h[i - S])*(h[i] - h[i + S]);
-        //     t[i] = val;
-        // }
-        // if (lowpass) {
-        //     i = l_idx++;
-        //     val = l[i - 1] + (t[i + L] - t[i - L - 1])/((2*L + 1.0));
-        //     l[i] = val;
-        // }
-        fprintf(output_file, "%f,%f,%f,%f,%f\n", ecg[i], h_hat[i], h[i], t[i], l[i]);
+        fprintf(output_file, "%f,%f,%f,%f\n", x[x_idx - 1],
+                                              x_bar[highpass_idx - 1],
+                                              y_hat[highpass_idx - 1],
+                                              y[highpass_idx - 1]);
     }
 
     fclose(input_file);
