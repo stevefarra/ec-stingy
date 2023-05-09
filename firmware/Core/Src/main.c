@@ -30,7 +30,7 @@
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
 
-typedef uint16_t dataType;
+typedef float dataType;
 typedef enum {false, true} bool;
 
 /* USER CODE END PTD */
@@ -42,16 +42,16 @@ typedef enum {false, true} bool;
 #define ECG_ADC &hadc1
 #define SIG_UART &huart2
 
-#define WINDOWSIZE 20   // Integrator window size, in samples. The article recommends 150ms. So, FS*0.15.
-						// However, you should check empirically if the waveform looks ok.
-#define NOSAMPLE -32000 // An indicator that there are no more samples to read. Use an impossible value for a sample.
-#define FS 360          // Sampling frequency.
-#define BUFFSIZE 600    // The size of the buffers (in samples). Must fit more than 1.66 times an RR interval, which
-                        // typically could be around 1 second.
+#define NOSAMPLE -32000    // An indicator that there are no more samples to read. Use an impossible value for a sample.
+#define FS 360             // Sampling frequency.
+#define BUFFSIZE 600       // The size of the buffers (in samples). Must fit more than 1.66 times an RR interval, which
+                           // typically could be around 1 second.
+#define WINDOWSIZE FS*0.15 // Integrator window size, in samples. The article recommends 150ms. So, FS*0.15.
+					       // However, you should check empirically if the waveform looks ok.
 
-#define DELAY 22		// Delay introduced by the filters. Filter only output samples after this one.
-						// Set to 0 if you want to keep the delay. Fixing the delay results in DELAY less samples
-						// in the final end result.
+#define DELAY 22		   // Delay introduced by the filters. Filter only output samples after this one.
+						   // Set to 0 if you want to keep the delay. Fixing the delay results in DELAY less samples
+						   // in the final end result.
 
 /* USER CODE END PD */
 
@@ -71,7 +71,7 @@ UART_HandleTypeDef huart2;
 
 uint16_t loop_counter;
 
-char msg[10];
+char msg[24];
 dataType data;
 
 /* USER CODE END PV */
@@ -99,7 +99,7 @@ void output(dataType data);
 // The signal array is where the most recent samples are kept. The other arrays are the outputs of each
 // filtering module: DC Block, low pass, high pass, integral etc.
 // The output is a buffer where we can change a previous result (using a back search) before outputting.
-dataType signal[BUFFSIZE], dcblock[BUFFSIZE], lowpass[BUFFSIZE], highpass[BUFFSIZE], derivative[BUFFSIZE], squared[BUFFSIZE], integral[BUFFSIZE], outputSignal[BUFFSIZE];
+dataType rawsignal[BUFFERSIZE], dcblock[BUFFERSIZE], lowpass[BUFFERSIZE], highpass[BUFFERSIZE], derivative[BUFFERSIZE], squared[BUFFERSIZE], integral[BUFFERSIZE], outputSignal[BUFFERSIZE];
 
 // rr1 holds the last 8 RR intervals. rr2 holds the last 8 RR intervals between rrlow and rrhigh.
 // rravg1 is the rr1 average, rr2 is the rravg2. rrlow = 0.92*rravg2, rrhigh = 1.08*rravg2 and rrmiss = 1.16*rravg2.
@@ -194,11 +194,11 @@ int main(void)
 		  // If they are, shift them, discarding the oldest sample and adding the new one at the end.
 		  // Else, just put the newest sample in the next free position.
 		  // Update 'current' so that the program knows where's the newest sample.
-		  if (sample >= BUFFSIZE)
+		  if (sample >= BUFFERSIZE)
 		  {
-		  	for (i = 0; i < BUFFSIZE - 1; i++)
+		  	for (i = 0; i < BUFFERSIZE - 1; i++)
 		  	{
-		  		signal[i] = signal[i+1];
+		  		rawsignal[i] = rawsignal[i+1];
 		  		dcblock[i] = dcblock[i+1];
 		  		lowpass[i] = lowpass[i+1];
 		  		highpass[i] = highpass[i+1];
@@ -207,78 +207,93 @@ int main(void)
 		  		integral[i] = integral[i+1];
 		  		outputSignal[i] = outputSignal[i+1];
 		  	}
-		  	current = BUFFSIZE - 1;
+		  	current = BUFFERSIZE - 1;
 		  }
 		  else
 		  {
 		  	current = sample;
 		  }
-		  signal[current] = input();
 
-		  sprintf(msg, "%hu\r\n", signal[current]);
-		  HAL_UART_Transmit(SIG_UART, (uint8_t*) msg, strlen(msg), HAL_MAX_DELAY);
+		  rawsignal[current] = input();
 
-//		  // DC Block filter
-//		  // This was not proposed on the original paper.
-//		  // It is not necessary and can be removed if your sensor or database has no DC noise.
-//		  if (current >= 1)
-//		  	dcblock[current] = signal[current] - signal[current-1] + 0.995*dcblock[current-1];
-//		  else
-//		  	dcblock[current] = 0;
-//
-//		  // Low Pass filter
-//		  // Implemented as proposed by the original paper.
-//		  // y(nT) = 2y(nT - T) - y(nT - 2T) + x(nT) - 2x(nT - 6T) + x(nT - 12T)
-//		  // Can be removed if your signal was previously filtered, or replaced by a different filter.
-//		  lowpass[current] = dcblock[current];
-//		  if (current >= 1)
-//		  	lowpass[current] += 2*lowpass[current-1];
-//		  if (current >= 2)
-//		  	lowpass[current] -= lowpass[current-2];
-//		  if (current >= 6)
-//		  	lowpass[current] -= 2*dcblock[current-6];
-//		  if (current >= 12)
-//		  	lowpass[current] += dcblock[current-12];
-//
-//		  // High Pass filter
-//		  // Implemented as proposed by the original paper.
-//		  // y(nT) = 32x(nT - 16T) - [y(nT - T) + x(nT) - x(nT - 32T)]
-//		  // Can be removed if your signal was previously filtered, or replaced by a different filter.
-//		  highpass[current] = -lowpass[current];
-//		  if (current >= 1)
-//		  	highpass[current] -= highpass[current-1];
-//		  if (current >= 16)
-//		  	highpass[current] += 32*lowpass[current-16];
-//		  if (current >= 32)
-//		  	highpass[current] += lowpass[current-32];
-//
-//		  // Derivative filter
-//		  // This is an alternative implementation, the central difference method.
-//		  // f'(a) = [f(a+h) - f(a-h)]/2h
-//		  // The original formula used by Pan-Tompkins was:
-//		  // y(nT) = (1/8T)[-x(nT - 2T) - 2x(nT - T) + 2x(nT + T) + x(nT + 2T)]
-//		  derivative[current] = highpass[current];
-//		  if (current > 0)
-//		  	derivative[current] -= highpass[current-1];
-//
-//		  // This just squares the derivative, to get rid of negative values and emphasize high frequencies.
-//		  // y(nT) = [x(nT)]^2.
-//		  squared[current] = derivative[current]*derivative[current];
-//
-//		  // Moving-Window Integration
-//		  // Implemented as proposed by the original paper.
-//		  // y(nT) = (1/N)[x(nT - (N - 1)T) + x(nT - (N - 2)T) + ... x(nT)]
-//		  // WINDOWSIZE, in samples, must be defined so that the window is ~150ms.
-//
-//		  integral[current] = 0;
-//		  for (i = 0; i < WINDOWSIZE; i++)
-//		  {
-//		  	if (current >= (dataType)i)
-//		  		integral[current] += squared[current - i];
-//		  	else
-//		  		break;
-//		  }
-//		  integral[current] /= (dataType)i;
+		  HAL_GPIO_TogglePin(DEBUG_GPIO_Port, DEBUG_Pin);
+
+		  // If no sample was read, stop processing!
+		  if (rawsignal[current] == NOSAMPLE)
+			  break;
+		  sample++; // Update sample counter
+
+		  // DC Block filter
+		  // This was not proposed on the original paper.
+		  // It is not necessary and can be removed if your sensor or database has no DC noise.
+		  if (current >= 1)
+			  dcblock[current] = rawsignal[current] - rawsignal[current-1] + 0.995*dcblock[current-1];
+		  else
+			  dcblock[current] = 0;
+
+		  // Low Pass filter
+		  // Implemented as proposed by the original paper.
+		  // y(nT) = 2y(nT - T) - y(nT - 2T) + x(nT) - 2x(nT - 6T) + x(nT - 12T)
+		  // Can be removed if your signal was previously filtered, or replaced by a different filter.
+		  lowpass[current] = dcblock[current];
+		  if (current >= 1)
+		  	lowpass[current] += 2*lowpass[current-1];
+		  if (current >= 2)
+		  	lowpass[current] -= lowpass[current-2];
+		  if (current >= 6)
+		  	lowpass[current] -= 2*dcblock[current-6];
+		  if (current >= 12)
+		  	lowpass[current] += dcblock[current-12];
+
+		  // High Pass filter
+		  // Implemented as proposed by the original paper.
+		  // y(nT) = 32x(nT - 16T) - [y(nT - T) + x(nT) - x(nT - 32T)]
+		  // Can be removed if your signal was previously filtered, or replaced by a different filter.
+		  highpass[current] = -lowpass[current];
+		  if (current >= 1)
+		  	highpass[current] -= highpass[current-1];
+		  if (current >= 16)
+		  	highpass[current] += 32*lowpass[current-16];
+		  if (current >= 32)
+		  	highpass[current] += lowpass[current-32];
+
+		  // Derivative filter
+		  // This is an alternative implementation, the central difference method.
+		  // f'(a) = [f(a+h) - f(a-h)]/2h
+		  // The original formula used by Pan-Tompkins was:
+		  // y(nT) = (1/8T)[-x(nT - 2T) - 2x(nT - T) + 2x(nT + T) + x(nT + 2T)]
+		  derivative[current] = highpass[current];
+		  if (current > 0)
+		  	derivative[current] -= highpass[current-1];
+
+		  // This just squares the derivative, to get rid of negative values and emphasize high frequencies.
+		  // y(nT) = [x(nT)]^2.
+		  squared[current] = derivative[current]*derivative[current];
+
+		  // Moving-Window Integration
+		  // Implemented as proposed by the original paper.
+		  // y(nT) = (1/N)[x(nT - (N - 1)T) + x(nT - (N - 2)T) + ... x(nT)]
+		  // WINDOWSIZE, in samples, must be defined so that the window is ~150ms.
+
+		  integral[current] = 0;
+		  for (i = 0; i < WINDOWSIZE; i++)
+		  {
+		  	if (current >= (dataType)i)
+		  		integral[current] += squared[current - i];
+		  	else
+		  		break;
+		  }
+		  integral[current] /= (dataType)i;
+
+		  HAL_GPIO_TogglePin(DEBUG_GPIO_Port, DEBUG_Pin);
+
+//		  sprintf
+//		  (
+//				  msg,
+//				  "%f\r\n",
+//				  4021513.250000
+//		  );
+//		  HAL_UART_Transmit(SIG_UART, (uint8_t*) msg, strlen(msg), HAL_MAX_DELAY);
 //
 //		  qrs = false;
 //
@@ -743,7 +758,10 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOA_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, LED_Pin|DEBUG_Pin, GPIO_PIN_SET);
+  HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_SET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(DEBUG_GPIO_Port, DEBUG_Pin, GPIO_PIN_RESET);
 
   /*Configure GPIO pin : PUSHBUTTON_Pin */
   GPIO_InitStruct.Pin = PUSHBUTTON_Pin;
@@ -793,11 +811,6 @@ dataType input(void) {
 }
 
 void output(dataType data) {
-
-	if (data) {
-		HAL_GPIO_TogglePin(DEBUG_GPIO_Port, DEBUG_Pin);
-	}
-
 	return;
 }
 
