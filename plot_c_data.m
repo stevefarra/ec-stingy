@@ -1,29 +1,45 @@
-% Read data from file
-data = csvread("output.csv");
+% Load the CSV file
+data = csvread('output.csv');
 
-% Plot the first four datastreams
-subplot(5,1,1);
-plot(data(:,1));
-title("Datastream 1");
+% Extract columns 1, 4, 5, 6, and 7
+col1 = data(:, 1);
+col4 = data(:, 4);
+col5 = data(:, 5);
+col6 = data(:, 6);
+col7 = data(:, 7);
 
-subplot(5,1,2);
-plot(data(:,2));
-title("Datastream 2");
+% Create a single figure to contain all the plots
+figure;
 
-subplot(5,1,3);
-plot(data(:,3));
-title("Datastream 3");
+% Plot column 1 on the first subplot
+subplot(4, 1, 1);
+plot(col1);
+title('Column 1');
+xlabel('x-axis');
+ylabel('y-axis');
 
-subplot(5,1,4);
-plot(data(:,4));
-title("Datastream 4");
+% Plot column 4 on the second subplot
+subplot(4, 1, 2);
+plot(col4);
+title('Column 4');
+xlabel('x-axis');
+ylabel('y-axis');
 
-% Plot the fifth datastream and hold the plot
-subplot(5,1,5);
-plot(data(:,5));
-title("Datastream 5");
+% Plot column 5 on the third subplot
+subplot(4, 1, 3);
+plot(col5);
+title('Column 5');
+xlabel('x-axis');
+ylabel('y-axis');
+
+% Plot columns 6 and 7 on the fourth subplot
+subplot(4, 1, 4);
+plot(col6, 'b'); % 'b' for blue color
 hold on;
+plot(col7, 'r'); % 'r' for red color
+hold off;
+title('Columns 6 and 7');
+xlabel('x-axis');
+ylabel('y-axis');
+legend('Column 6', 'Column 7');
 
-##% Plot the sixth datastream on the same plot
-##plot(data(:,6));
-##title("Datastream 5 and 6");
