@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <math.h>
 
 #define DATA_FILE   "scope.csv"
 #define OUTPUT_FILE "output.csv"
@@ -89,7 +88,7 @@ int main() {
                    th_idx;
 
     // Flags
-    bool counting_samples = TRUE,
+    bool all_filters_active = FALSE,
 
          highpass  = FALSE,
          triangle  = FALSE,
@@ -104,20 +103,9 @@ int main() {
     float sum;
     short j;
 
-    // Open the data file
+    // Open the data and output files
     FILE *input_file = fopen(DATA_FILE, "r");
-    if (input_file == NULL) {
-        perror("Unable to open the data file");
-        return 1;
-    }
-
-    // Open the output file
     FILE *output_file = fopen(OUTPUT_FILE, "w");
-    if (output_file == NULL) {
-        perror("Unable to open the output file");
-        fclose(input_file);
-        return 1;
-    }
 
     // Clear buffers
     for (i = 0; i < BUFF_SIZE; i++) {
@@ -160,12 +148,12 @@ int main() {
         x[i] = x_val;
 
         x_idx++;
-        if (counting_samples) {
+        if (!all_filters_active) {
             num_x_samples++;
 
             if (num_x_samples == 2*N + 1) {
-            highpass = TRUE;
-            y_idx = x_idx - (N + 1);
+                highpass = TRUE;
+                y_idx = x_idx - (N + 1);
             }
             if (num_y_samples == 2*S + 1) {
                 triangle = TRUE;
@@ -197,14 +185,14 @@ int main() {
                 x_bar_val = x_bar[i - 1] + (x[i + N] - x[i - (N + 1)]) / (2*N + 1);
             }
             y_hat_val = x_val - x_bar_val;
-            y_val = fabs(y_hat_val);
+            y_val = y_hat_val < 0 ? -y_hat_val : y_hat_val;
 
             x_bar[i] = x_bar_val;
             y_hat[i] = y_hat_val;
             y[i] = y_val;
 
             y_idx++;
-            if (counting_samples) {
+            if (!all_filters_active) {
                 num_y_samples++;
             }
         }
@@ -234,7 +222,7 @@ int main() {
             l[i] = l_val;
 
             l_idx++;
-            if (counting_samples) {
+            if (!all_filters_active) {
                 num_l_samples++;
             }
         }
@@ -242,7 +230,7 @@ int main() {
             i = th_idx;
             
             if (first_threshold) {
-                counting_samples = FALSE;
+                all_filters_active = TRUE;
                 first_threshold = FALSE;
                 sum = 0;
 
@@ -251,7 +239,7 @@ int main() {
                 }
                 ma_val = sum / (2*M + 1);
             } else {
-                ma_val = ma[i - 1] + (l[i + M] - l[i - (M + 1)])/(2*M + 1);
+                ma_val = ma[i - 1] + (l[i + M] - l[i - (M + 1)]) / (2*M + 1);
             }
             th_val = BETA*ma_val + theta;
 
@@ -260,7 +248,9 @@ int main() {
 
             th_idx++;
         }
-
+        if (all_filters_active) {
+            
+        }
         fprintf(output_file,
                 "%f,%f,%f,%f,%f,%f,%f\n",
                 x_val,
