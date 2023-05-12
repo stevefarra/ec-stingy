@@ -101,7 +101,7 @@ int main() {
           ma_val    = 0,
           theta,
           th_val    = 0,
-          rr;
+          aoi_val;
 
     // Indices
     unsigned short i,
@@ -154,6 +154,7 @@ int main() {
         l[i]     = 0;
         ma[i]    = 0;
         th[i]    = 0;
+        aoi[i]   = 0;
     }
 
     // Read data from file and store in buffer, then write to output file
@@ -172,6 +173,7 @@ int main() {
                 l    [i] = l    [i + 1];
                 ma   [i] = ma   [i + 1];
                 th   [i] = th   [i + 1];
+                aoi  [i] = aoi  [i + 1];
             }
             // Decrement the indices
             x_idx--;
@@ -284,61 +286,25 @@ int main() {
                 ma_val = ma[i - 1] + (l[i + M] - l[i - (M + 1)]) / (2*M + 1);
             }
             th_val = BETA*ma_val + theta;
+            aoi_val = l_val >= th_val ? TRUE : FALSE;
 
             ma[i] = ma_val;
             th[i] = th_val;
+            aoi[i] = aoi_val;
 
             th_idx++;
         }
 
-        if (state == IDLE) {
-            if (all_filters_active) {
-                state = START;
-            }
-        }
-        if (state == START) {
-            if (l_val < th_val) {
-                state = WAIT_FOR_ONSET;
-            }
-        }
-        if (state == WAIT_FOR_ONSET) {
-            if (l_val >= th_val) {
-                start_idx = y_idx - 1;
-                state = WAIT_FOR_OFFSET;
-            }
-        }
-        if (state == WAIT_FOR_OFFSET) {    
-            if (l_val < th_val) {
-                end_idx = y_idx - 1;
-
-                if (end_idx - start_idx >= 35) {
-                    state = FIND_MAX_VAL;
-                }
-            }
-        }
-        if (state == FIND_MAX_VAL) {
-            candidate_max_idx = find_max(y, start_idx, end_idx);
-
-            if (first_detection = TRUE) {
-                max_idx = candidate_max_idx;
-                first_detection = FALSE;
-            } else {
-                rr = (candidate_max_idx - max_idx) / FS;
-                prev_max_idx = max_idx;
-                max_idx = candidate_max_idx;
-                printf("HR: %f\n", 60/rr);
-            }
-            state = WAIT_FOR_ONSET;
-        }
         fprintf(output_file,
-                "%f,%f,%f,%f,%f,%f,%f\n",
+                "%f,%f,%f,%f,%f,%f,%f,%f\n",
                 x_val,
                 x_bar_val,
                 y_hat_val,
                 y_val,
                 t_val,
                 l_val,
-                th_val
+                th_val,
+                aoi_val
         );
     }
     fclose(input_file);

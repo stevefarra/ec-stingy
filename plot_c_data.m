@@ -1,45 +1,41 @@
-% Load the CSV file
+% Load data
 data = csvread('output.csv');
 
-% Extract columns 1, 4, 5, 6, and 7
-col1 = data(:, 1);
-col4 = data(:, 4);
-col5 = data(:, 5);
-col6 = data(:, 6);
-col7 = data(:, 7);
+% Extract columns into variables
+x = data(:,1);
+x_bar = data(:,2);
+y_hat = data(:,3);
+y = data(:,4);
+t = data(:,5);
+l = data(:,6);
+th = data(:,7);
+aoi = data(:,8)*40000;
 
-% Create a single figure to contain all the plots
-figure;
+% Create a new figure
+figure
 
-% Plot column 1 on the first subplot
-subplot(4, 1, 1);
-plot(col1);
-title('Column 1');
-xlabel('x-axis');
-ylabel('y-axis');
+% Subplot for ECG signal
+subplot(4,1,1);
+plot(x);
+title('ECG signal (x)');
 
-% Plot column 4 on the second subplot
-subplot(4, 1, 2);
-plot(col4);
-title('Column 4');
-xlabel('x-axis');
-ylabel('y-axis');
+% Subplot for output of highpass filter
+subplot(4,1,2);
+plot(y);
+title('Output of highpass filter (y)');
 
-% Plot column 5 on the third subplot
-subplot(4, 1, 3);
-plot(col5);
-title('Column 5');
-xlabel('x-axis');
-ylabel('y-axis');
+% Subplot for output of triangle filter
+subplot(4,1,3);
+plot(t);
+title('Output of triangle filter (t)');
 
-% Plot columns 6 and 7 on the fourth subplot
-subplot(4, 1, 4);
-plot(col6, 'b'); % 'b' for blue color
-hold on;
-plot(col7, 'r'); % 'r' for red color
+% Subplot for output of lowpass filter, threshold, and areas of interest
+subplot(4,1,4);
+hold on; % This allows multiple plots on the same axes
+plot(l);
+plot(th);
+plot(aoi,'k');
 hold off;
-title('Columns 6 and 7');
-xlabel('x-axis');
-ylabel('y-axis');
-legend('Column 6', 'Column 7');
+legend('Lowpass Filter (l)', 'Threshold (th)', 'Areas of Interest (aoi)');
+title('Outputs overlayed (l, th, aoi)');
 
