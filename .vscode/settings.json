@@ -1,5 +1,6 @@
 {
     "files.associations": {
-        "concepts": "cpp"
+        "concepts": "cpp",
+        "cstdlib": "c"
     }
 }

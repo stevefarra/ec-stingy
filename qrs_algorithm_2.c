@@ -4,7 +4,7 @@
 
 #define DATA_FILE   "scope.csv"
 #define OUTPUT_FILE "output.csv"
-#define FS          360
+#define FS          360.0
 
 /* Filter parameters */
 #define BUFF_SIZE 1080
@@ -14,10 +14,21 @@
 #define BETA      2.5 // Dynamic threshold coefficient
 #define M         150 // Moving average window size for dynamic threshold calculation
 
+#define MIN_R_DIST 0.272
+
 typedef enum {
     FALSE,
     TRUE
 } bool;
+
+typedef enum {
+    IDLE,
+    START,
+    WAIT_FOR_ONSET,
+    WAIT_FOR_OFFSET,
+    FIND_MAX_VAL,
+    ERR_CORRECT
+} state;
 
 int compare(const void *a, const void *b) {
         float fa = *(const float *)a;
@@ -51,7 +62,23 @@ float get_median_val(float arr[], unsigned short start_idx, unsigned short end_i
     return median;
 }
 
+unsigned short find_max(float arr[], unsigned short start_idx, unsigned short end_idx) {
+    float max_value = arr[start_idx];
+    unsigned short max_index = start_idx;
+
+    for (unsigned short i = start_idx + 1; i <= end_idx; i++) {
+        if (arr[i] > max_value) {
+            max_value = arr[i];
+            max_index = i;
+        }
+    }
+
+    return max_index;
+}
+
 int main() {
+
+    state state = IDLE;
 
     // Signal buffers
     float x    [BUFF_SIZE],
@@ -61,7 +88,8 @@ int main() {
           t    [BUFF_SIZE],
           l    [BUFF_SIZE],
           ma   [BUFF_SIZE],
-          th   [BUFF_SIZE];
+          th   [BUFF_SIZE],
+          aoi  [BUFF_SIZE];
     
     // Signal values
     float x_val     = 0,
@@ -72,7 +100,8 @@ int main() {
           l_val     = 0,
           ma_val    = 0,
           theta,
-          th_val    = 0;
+          th_val    = 0,
+          rr;
 
     // Indices
     unsigned short i,
@@ -85,7 +114,13 @@ int main() {
                    y_idx,
                    t_idx,
                    l_idx,
-                   th_idx;
+                   th_idx,
+
+                   start_idx,
+                   end_idx,
+                   candidate_max_idx,
+                   prev_max_idx,
+                   max_idx;
 
     // Flags
     bool all_filters_active = FALSE,
@@ -97,7 +132,9 @@ int main() {
 
          first_highpass  = TRUE,
          first_lowpass   = TRUE,
-         first_threshold = TRUE;
+         first_threshold = TRUE,
+
+         first_detection = TRUE;
 
     // Moving average variables
     float sum;
@@ -142,6 +179,10 @@ int main() {
             t_idx--;
             l_idx--;
             th_idx--;
+
+            if (state == WAIT_FOR_OFFSET) {
+                start_idx--;
+            }
         }
         // Add the sample to the buffer and increment the index
         i = x_idx;
@@ -169,7 +210,6 @@ int main() {
                 theta = get_median_val(l, l_idx - num_l_samples, l_idx - 1) / 4;
             }
         }
-
         if (highpass) {
             i = y_idx;
             
@@ -203,7 +243,9 @@ int main() {
             t[i] = t_val;
 
             t_idx++;
-            num_t_samples++;
+            if (!all_filters_active) {
+                num_t_samples++;
+            }
         }
         if (lowpass) {
             i = l_idx;
@@ -248,8 +290,45 @@ int main() {
 
             th_idx++;
         }
-        if (all_filters_active) {
-            
+
+        if (state == IDLE) {
+            if (all_filters_active) {
+                state = START;
+            }
+        }
+        if (state == START) {
+            if (l_val < th_val) {
+                state = WAIT_FOR_ONSET;
+            }
+        }
+        if (state == WAIT_FOR_ONSET) {
+            if (l_val >= th_val) {
+                start_idx = y_idx - 1;
+                state = WAIT_FOR_OFFSET;
+            }
+        }
+        if (state == WAIT_FOR_OFFSET) {    
+            if (l_val < th_val) {
+                end_idx = y_idx - 1;
+
+                if (end_idx - start_idx >= 35) {
+                    state = FIND_MAX_VAL;
+                }
+            }
+        }
+        if (state == FIND_MAX_VAL) {
+            candidate_max_idx = find_max(y, start_idx, end_idx);
+
+            if (first_detection = TRUE) {
+                max_idx = candidate_max_idx;
+                first_detection = FALSE;
+            } else {
+                rr = (candidate_max_idx - max_idx) / FS;
+                prev_max_idx = max_idx;
+                max_idx = candidate_max_idx;
+                printf("HR: %f\n", 60/rr);
+            }
+            state = WAIT_FOR_ONSET;
         }
         fprintf(output_file,
                 "%f,%f,%f,%f,%f,%f,%f\n",
@@ -262,7 +341,6 @@ int main() {
                 th_val
         );
     }
-
     fclose(input_file);
     fclose(output_file);
 

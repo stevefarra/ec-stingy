@@ -11,7 +11,7 @@ N = 25;      % High-pass filter parameter
 s = 7;       % Triangle template matching parameter
 L = 5;       % Low-pass filter parameter
 beta = 2.5;  % Modified threshold calculation parameter
-M = int32(150);     % Modified threshold calculation parameter
+M = 150      % Modified threshold calculation parameter
 
 x_bar = zeros(length(x), 1);
 y = zeros(length(x), 1);
