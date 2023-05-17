@@ -16,6 +16,9 @@
 
 #define MIN_RR_DIST 0.272*FS
 
+#define WINDOW(R) (2*(R) + 1)
+#define ABS(x) ((x) < 0 ? -(x) : (x))
+
 float movavg(float x[],
              float y[],
              float curr_val,
@@ -27,7 +30,7 @@ float movavg(float x[],
                 j = y_idx;
 
     const unsigned short R = window_radius,
-                         W = 2*R + 1;
+                         W = WINDOW(R);
 
     if (i <= W) {
         curr_val += x[i] / W;
@@ -146,9 +149,9 @@ int main() {
         x[i_x] = x_val;
 
         x_bar_val = movavg(x, x_bar, x_bar_val, i_x, i_x_bar, N);
-        if (i_x_bar >= 2*N + 1) {
+        if (i_x_bar >= WINDOW(N)) {
             y_hat_val = x_val - x_bar_val;
-            y_val     = y_hat_val < 0 ? -y_hat_val : y_hat_val;
+            y_val     = ABS(y_hat_val);
 
             x_bar[i_x_bar] = x_bar_val;
             y    [i_x_bar] = y_val;
@@ -199,13 +202,14 @@ int main() {
         i_ma++;
 
         fprintf(output_file,
-                "%f,%f,%f,%f,%f\n",
+                "%f,%f,%f,%f,%f,%f,%i\n",
                 x_val,
                 x_bar_val,
                 y_val,
                 t_val,
                 l_val,
-                th_val
+                th_val,
+                aoi
         );
     }
     fclose(input_file);

@@ -7,6 +7,8 @@ x_bar = data(:,2);
 y = data(:,3);
 t = data(:,4);
 l = data(:,5);
+th = data(:,6);
+aoi = data(:,7)*60000;
 
 % Create a new figure
 figure
@@ -31,7 +33,7 @@ subplot(4,1,4);
 hold on; % This allows multiple plots on the same axes
 plot(l);
 plot(th);
-##plot(aoi,'k');
+plot(aoi,'k');
 hold off;
 legend('Lowpass Filter (l)', 'Threshold (th)', 'Areas of Interest (aoi)');
 title('Outputs overlayed (l, th, aoi)');
