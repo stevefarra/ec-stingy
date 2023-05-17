@@ -1,6 +1,6 @@
 #include <stdio.h>
 
-unsigned short find_max(float arr[], unsigned short start_idx, unsigned short end_idx) {
+unsigned short max_index(float arr[], unsigned short start_idx, unsigned short end_idx) {
     float max_value = arr[start_idx];
     unsigned short max_index = start_idx;
 
@@ -19,7 +19,7 @@ int main() {
     unsigned short start_idx = 1;
     unsigned short end_idx = 4;
 
-    unsigned short max_index = find_max(arr, start_idx, end_idx);
+    unsigned short max_index = max_index(arr, start_idx, end_idx);
     float max_value = arr[max_index];
     printf("The max value between indices %hu and %hu is: %f, found at index: %hu\n", start_idx, end_idx, max_value, max_index);
 

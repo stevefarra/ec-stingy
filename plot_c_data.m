@@ -4,12 +4,9 @@ data = csvread('output.csv');
 % Extract columns into variables
 x = data(:,1);
 x_bar = data(:,2);
-y_hat = data(:,3);
-y = data(:,4);
-t = data(:,5);
-l = data(:,6);
-th = data(:,7);
-aoi = data(:,8)*40000;
+y = data(:,3);
+t = data(:,4);
+l = data(:,5);
 
 % Create a new figure
 figure
@@ -34,7 +31,7 @@ subplot(4,1,4);
 hold on; % This allows multiple plots on the same axes
 plot(l);
 plot(th);
-plot(aoi,'k');
+##plot(aoi,'k');
 hold off;
 legend('Lowpass Filter (l)', 'Threshold (th)', 'Areas of Interest (aoi)');
 title('Outputs overlayed (l, th, aoi)');
