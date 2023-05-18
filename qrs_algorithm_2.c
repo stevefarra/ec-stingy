@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define DATA_FILE   "scope_reversed.csv"
+#define DATA_FILE   "scope.csv"
 #define OUTPUT_FILE "output.csv"
 #define FS          360
 
@@ -199,7 +199,7 @@ int main() {
                     i_prev_max = i_curr_max;
                     i_curr_max = i_cand_max;
                     rr = i_curr_max - i_prev_max;
-                    printf("%i\n", rr);
+                    printf("%f\n", 60.0*FS/rr);
                 }
             }
         }
