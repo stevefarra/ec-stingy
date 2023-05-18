@@ -2,12 +2,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define DATA_FILE   "scope.csv"
+#define DATA_FILE   "scope_clean.csv"
 #define OUTPUT_FILE "output.csv"
 #define FS          360
 
 /* Filter parameters */
-#define BUFF_SIZE 2500
+#define BUFF_SIZE 1080
 #define N         25  // Moving average window size for high-pass filter
 #define S         7   // Triangle template matching parameter
 #define L         5   // Moving average window size for Low-pass filter
@@ -173,11 +173,10 @@ int main() {
         ma_val = movavg(l, ma_val, i_l, i_ma, M);
         if (i_ma >= 0) {
             ma[i_ma] = ma_val;
+
             theta = ma_val / 4;
             th_val   = BETA*ma_val + theta;
-        }
-
-        if (i_x >= 300) {
+            
             prev_aoi = aoi;
             aoi = l_val >= th_val ? 1 : 0;
         }

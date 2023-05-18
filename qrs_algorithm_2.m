@@ -1,9 +1,8 @@
-clear;
-
 % Load the ECG signal
 data_file = 'scope.csv';
 data = csvread(data_file);
 x = data(:,1);
+x = x_new;
 Fs = 360; % Sampling frequency
 
 % Algorithm parameters
@@ -78,6 +77,9 @@ end
 % Plot the signals on separate subplots in the same figure
 t_plot = (1:length(x)) / Fs;
 r_peak_times = r_peaks / Fs;
+
+% Print heartrates to command window
+disp(60 ./ diff(r_peak_times));
 
 figure;
 % Original ECG signal
