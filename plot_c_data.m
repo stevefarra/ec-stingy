@@ -3,12 +3,11 @@ data = csvread('output.csv');
 
 % Extract columns into variables
 x = data(:,1);
-x_bar = data(:,2);
-y = data(:,3);
-t = data(:,4);
-l = data(:,5);
-th = data(:,6);
-aoi = data(:,7)*60000;
+y = data(:,2);
+t = data(:,3);
+l = data(:,4);
+th = data(:,5);
+aoi = data(:,6)*60000;
 
 % Create a new figure
 figure

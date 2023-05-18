@@ -2,12 +2,12 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define DATA_FILE   "scope.csv"
+#define DATA_FILE   "scope_reversed.csv"
 #define OUTPUT_FILE "output.csv"
 #define FS          360
 
 /* Filter parameters */
-#define BUFF_SIZE 1080
+#define BUFF_SIZE 2500
 #define N         25  // Moving average window size for high-pass filter
 #define S         7   // Triangle template matching parameter
 #define L         5   // Moving average window size for Low-pass filter
@@ -20,7 +20,6 @@
 #define ABS(x) ((x) < 0 ? -(x) : (x))
 
 float movavg(float x[],
-             float y[],
              float curr_val,
              const short x_idx,
              const short y_idx,
@@ -41,7 +40,6 @@ float movavg(float x[],
 }
 
 float triangle(float x[],
-               float y[],
                const short y_idx,
                const unsigned short window_radius) {
     
@@ -103,12 +101,14 @@ int main() {
           i_t           = i_x_bar - (S + 1),
           i_l           = i_t     - (L + 1),
           i_ma          = i_l     - (M + 1),
+          aoi           = 0,
+          prev_aoi      = 0,
           i_onset,
           i_offset,
+          i_cand_max    = -1,
           i_curr_max    = -1,
           i_prev_max    = -1,
-          aoi           = 0,
-          prev_aoi      = 0;
+          rr;
 
     // Open the data and output files
     FILE *input_file = fopen(DATA_FILE, "r");
@@ -145,11 +145,14 @@ int main() {
             i_t--;
             i_l--;
             i_ma--;
+            i_onset--;
+            i_curr_max--;
+            i_prev_max--;
         }
         x[i_x] = x_val;
 
-        x_bar_val = movavg(x, x_bar, x_bar_val, i_x, i_x_bar, N);
-        if (i_x_bar >= WINDOW(N)) {
+        x_bar_val = movavg(x, x_bar_val, i_x, i_x_bar, N);
+        if (i_x_bar >= N) {
             y_hat_val = x_val - x_bar_val;
             y_val     = ABS(y_hat_val);
 
@@ -157,17 +160,17 @@ int main() {
             y    [i_x_bar] = y_val;
         }
 
-        t_val = triangle(y, t, i_t, S);
+        t_val = triangle(y, i_t, S);
         if (i_t >= 0) {
             t[i_t] = t_val;
         }
 
-        l_val = movavg(t, l, l_val, i_t, i_l, L);
+        l_val = movavg(t, l_val, i_t, i_l, L);
         if (i_l >= 0) {
             l[i_l] = l_val;
         }
 
-        ma_val = movavg(l, ma, ma_val, i_l, i_ma, M);
+        ma_val = movavg(l, ma_val, i_l, i_ma, M);
         if (i_ma >= 0) {
             ma[i_ma] = ma_val;
             theta = ma_val / 4;
@@ -183,34 +186,30 @@ int main() {
             i_onset = i_x_bar;
         } else if (aoi - prev_aoi == -1) {
             i_offset = i_x_bar;
-            i_prev_max = i_curr_max;
-            i_curr_max = max_index(y, i_onset, i_offset);
+            i_cand_max = max_index(y, i_onset, i_offset);
 
-            if (i_curr_max - i_prev_max <= MIN_RR_DIST) {
-                if (y[i_curr_max] >= y[i_prev_max]) {
-                    // discard previous peak
+            if (i_curr_max < 0) {
+                i_curr_max = i_cand_max;
+            } else {
+                if (i_cand_max - i_curr_max < MIN_RR_DIST) {
+                    if (y[i_cand_max] > y[i_curr_max]) {
+                        i_curr_max = i_cand_max;
+                    } 
                 } else {
-                    // discard current peak
+                    i_prev_max = i_curr_max;
+                    i_curr_max = i_cand_max;
+                    rr = i_curr_max - i_prev_max;
+                    printf("%i\n", rr);
                 }
             }
         }
-        
+        fprintf(output_file,"%f,%f,%f,%f,%f,%i\n",x_val,y_val,t_val,l_val,th_val,aoi);
+
         i_x++;
         i_x_bar++;
         i_t++;
         i_l++;
         i_ma++;
-
-        fprintf(output_file,
-                "%f,%f,%f,%f,%f,%f,%i\n",
-                x_val,
-                x_bar_val,
-                y_val,
-                t_val,
-                l_val,
-                th_val,
-                aoi
-        );
     }
     fclose(input_file);
     fclose(output_file);
