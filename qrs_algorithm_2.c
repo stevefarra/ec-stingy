@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define DATA_FILE   "scope_clean.csv"
+#define DATA_FILE   "scope.csv"
 #define OUTPUT_FILE "output.csv"
 #define FS          360
 
@@ -16,20 +16,18 @@
 
 #define MIN_RR_DIST 0.272*FS
 
-#define WINDOW(R) (2*(R) + 1)
 #define ABS(x) ((x) < 0 ? -(x) : (x))
 
-float movavg(float x[],
-             float curr_val,
+float movavg(float curr_val,
+             float x[],
              const short x_idx,
-             const short y_idx,
              const unsigned short window_radius) {
 
-    const short i = x_idx,
-                j = y_idx;
-
     const unsigned short R = window_radius,
-                         W = WINDOW(R);
+                         W = 2*R + 1;
+
+    const short i = x_idx,
+                j = x_idx - (R + 1);
 
     if (i <= W) {
         curr_val += x[i] / W;
@@ -73,7 +71,18 @@ unsigned short max_index(float arr[],
     return max_index;
 }
 
+int rounded(float value) {
+    if (value >= 0) {
+        return (int)(value + 0.5f);
+    } else {
+        return (int)(value - 0.5f);
+    }
+}
+
 int main() {
+    // Open the data and output files
+    FILE *input_file = fopen(DATA_FILE, "r");
+    FILE *output_file = fopen(OUTPUT_FILE, "w");
 
     // Signal buffers
     float x    [BUFF_SIZE],
@@ -92,27 +101,25 @@ int main() {
           l_val     = 0,
           ma_val    = 0,
           theta     = 0,
-          th_val    = 0;
+          th_val    = 0,
+          bpm       = -1;
 
     // Indices
-    short i,
+    short i             = -1,
           i_x           = 0,
           i_x_bar       = i_x     - (N + 1),
           i_t           = i_x_bar - (S + 1),
           i_l           = i_t     - (L + 1),
           i_ma          = i_l     - (M + 1),
+
           aoi           = 0,
           prev_aoi      = 0,
-          i_onset,
-          i_offset,
+          i_onset       = -1,
+          i_offset      = -1,
           i_cand_max    = -1,
           i_curr_max    = -1,
           i_prev_max    = -1,
-          rr;
-
-    // Open the data and output files
-    FILE *input_file = fopen(DATA_FILE, "r");
-    FILE *output_file = fopen(OUTPUT_FILE, "w");
+          rr            = -1;
 
     // Clear buffers
     for (i = 0; i < BUFF_SIZE; i++) {
@@ -151,7 +158,7 @@ int main() {
         }
         x[i_x] = x_val;
 
-        x_bar_val = movavg(x, x_bar_val, i_x, i_x_bar, N);
+        x_bar_val = movavg(x_bar_val, x, i_x, N);
         if (i_x_bar >= N) {
             y_hat_val = x_val - x_bar_val;
             y_val     = ABS(y_hat_val);
@@ -165,40 +172,41 @@ int main() {
             t[i_t] = t_val;
         }
 
-        l_val = movavg(t, l_val, i_t, i_l, L);
+        l_val = movavg(l_val, t, i_t, L);
         if (i_l >= 0) {
             l[i_l] = l_val;
         }
 
-        ma_val = movavg(l, ma_val, i_l, i_ma, M);
+        ma_val = movavg(ma_val, l, i_l, M);
         if (i_ma >= 0) {
             ma[i_ma] = ma_val;
 
             theta = ma_val / 4;
             th_val   = BETA*ma_val + theta;
-            
+
             prev_aoi = aoi;
             aoi = l_val >= th_val ? 1 : 0;
         }
 
         if (aoi - prev_aoi == 1) {
-            i_onset = i_x_bar;
+            i_onset = i_x;
         } else if (aoi - prev_aoi == -1) {
-            i_offset = i_x_bar;
-            i_cand_max = max_index(y, i_onset, i_offset);
+            i_offset = i_x;
+            i_cand_max = max_index(x, i_onset, i_offset);
 
             if (i_curr_max < 0) {
                 i_curr_max = i_cand_max;
             } else {
                 if (i_cand_max - i_curr_max < MIN_RR_DIST) {
-                    if (y[i_cand_max] > y[i_curr_max]) {
+                    if (x[i_cand_max] > x[i_curr_max]) {
                         i_curr_max = i_cand_max;
                     } 
                 } else {
                     i_prev_max = i_curr_max;
                     i_curr_max = i_cand_max;
                     rr = i_curr_max - i_prev_max;
-                    printf("%f\n", 60.0*FS/rr);
+                    bpm = 60.0 * FS / rr;
+                    printf("%f\n", bpm);
                 }
             }
         }
