@@ -189,16 +189,16 @@ int main() {
         }
 
         if (aoi - prev_aoi == 1) {
-            i_onset = i_x;
+            i_onset = i_x_bar;
         } else if (aoi - prev_aoi == -1) {
-            i_offset = i_x;
-            i_cand_max = max_index(x, i_onset, i_offset);
+            i_offset = i_x_bar;
+            i_cand_max = max_index(y, i_onset, i_offset);
 
             if (i_curr_max < 0) {
                 i_curr_max = i_cand_max;
             } else {
                 if (i_cand_max - i_curr_max < MIN_RR_DIST) {
-                    if (x[i_cand_max] > x[i_curr_max]) {
+                    if (y[i_cand_max] > y[i_curr_max]) {
                         i_curr_max = i_cand_max;
                     } 
                 } else {

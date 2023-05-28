@@ -49,7 +49,7 @@ for i = 1:length(l)
             buffer = [];
             flag = 1;
         end
-        buffer = [buffer; i, x(i)];
+        buffer = [buffer; i, y(i)];
     else
         if flag == 1
             [~, max_idx] = max(buffer(:, 2));
@@ -58,7 +58,7 @@ for i = 1:length(l)
             if prev_r_peak_idx ~= -1
                 r_peak_distance = (r_peak_idx - prev_r_peak_idx) / Fs * 1000;
                 if r_peak_distance <= 272
-                    if x(r_peak_idx) >= x(prev_r_peak_idx)
+                    if y(r_peak_idx) >= y(prev_r_peak_idx)
                         r_peaks(end) = [];
                     else
                         continue;

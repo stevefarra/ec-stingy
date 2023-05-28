@@ -1,6 +1,7 @@
 {
     "files.associations": {
         "concepts": "cpp",
-        "cstdlib": "c"
+        "cstdlib": "c",
+        "compare": "c"
     }
 }
