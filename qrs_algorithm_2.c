@@ -7,7 +7,7 @@
 #define FS          360
 
 /* Filter parameters */
-#define BUFF_SIZE 1080
+#define BUFF_SIZE 1000
 #define N         25  // Moving average window size for high-pass filter
 #define S         7   // Triangle template matching parameter
 #define L         5   // Moving average window size for Low-pass filter

@@ -34,8 +34,9 @@
 #define TIM6_FREQ 1E6
 #define FS 360.0
 #define MAIN_TRIGGER TIM6_FREQ / FS
-#define BUFF_SIZE 1080
+#define BUFF_SIZE 720
 #define N 25
+#define S 7
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -51,7 +52,6 @@ TIM_HandleTypeDef htim6;
 UART_HandleTypeDef huart2;
 
 /* USER CODE BEGIN PV */
-
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -62,6 +62,7 @@ static void MX_TIM6_Init(void);
 static void MX_USART2_UART_Init(void);
 /* USER CODE BEGIN PFP */
 float movavg(float curr_val, float x[], const short x_idx, const unsigned short window_radius);
+float triangle(float x[], const short y_idx, const unsigned short window_radius);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -79,16 +80,20 @@ int main(void)
   /* USER CODE BEGIN 1 */
 	uint16_t tim6_val;
 	char msg[10];
-    float x[BUFF_SIZE],
-		  x_bar[BUFF_SIZE],
-//		  y[BUFF_SIZE],
-		  x_val,
+
+	float x[BUFF_SIZE],
+	      x_bar[BUFF_SIZE],
+	      y[BUFF_SIZE],
+		  t[BUFF_SIZE],
+	      x_val,
 		  x_bar_val = 0,
 		  y_hat_val = 0,
-		  y_val = 0;
+		  y_val = 0,
+		  t_val = 0;
     short i,
 		  i_x = 0,
-		  i_x_bar = i_x - (N + 1);
+		  i_x_bar = i_x - (N + 1),
+		  i_t = i_x_bar - (S + 1);
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -100,7 +105,8 @@ int main(void)
   for (i = 0; i < BUFF_SIZE; i++) {
 	  x[i] = 0;
 	  x_bar[i] = 0;
-//	  y[i] = 0;
+	  y[i] = 0;
+	  t[i] = 0;
   }
   /* USER CODE END Init */
 
@@ -130,10 +136,12 @@ int main(void)
 			  for (i = 0; i < BUFF_SIZE - 1; i++) {
 				  x[i] = x[i + 1];
 				  x_bar[i] = x_bar[i + 1];
-//				  y[i] = y[i + 1];
+				  y[i] = y[i + 1];
+				  t[i] = t[i + 1];
 			  }
 			  i_x--;
 			  i_x_bar--;
+			  i_t--;
 		  }
 		  HAL_ADC_Start(&hadc1);
 		  HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
@@ -144,8 +152,8 @@ int main(void)
 		  if (i_x_bar >= N) {
 			  y_hat_val = x_val - x_bar_val;
 			  y_val = ABS(y_hat_val);
-//		      x_bar[i_x_bar] = x_bar_val;
-//		      y[i_x_bar] = y_val;
+		      x_bar[i_x_bar] = x_bar_val;
+		      y[i_x_bar] = y_val;
 		  }
 
 		  npf_snprintf(msg, sizeof(msg), "%i\r\n", (int) y_val);
@@ -153,6 +161,7 @@ int main(void)
 
 		  i_x++;
 		  i_x_bar++;
+		  i_t++;
 
 		  tim6_val = __HAL_TIM_GET_COUNTER(&htim6);
 	  }
@@ -395,6 +404,19 @@ float movavg(float curr_val, float x[], const short x_idx, const unsigned short 
         curr_val = curr_val + (x[j + R] - x[j - (R + 1)]) / W;
     }
     return curr_val;
+}
+
+float triangle(float x[], const short y_idx, const unsigned short window_radius) {
+    const short j = y_idx;
+    const unsigned short R = window_radius;
+
+    if (j < 0) {
+        return 0;
+    } else if (j < R) {
+        return x[j] * (x[j] - x[j + R]);
+    } else {
+        return (x[j] - x[j - R]) * (x[j] - x[j + R]);
+    }
 }
 /* USER CODE END 4 */
 
