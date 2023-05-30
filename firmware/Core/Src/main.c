@@ -21,7 +21,6 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
-#include <stdio.h>
 #include <string.h>
 /* USER CODE END Includes */
 
@@ -34,13 +33,14 @@
 /* USER CODE BEGIN PD */
 #define TIM6_FREQ 1E6
 #define FS 360.0
-
+#define MAIN_TRIGGER TIM6_FREQ / FS
 #define BUFF_SIZE 1080
+#define N 25
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
-
+#define ABS(x) ((x) < 0 ? -(x) : (x))
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
@@ -61,7 +61,7 @@ static void MX_ADC1_Init(void);
 static void MX_TIM6_Init(void);
 static void MX_USART2_UART_Init(void);
 /* USER CODE BEGIN PFP */
-
+float movavg(float curr_val, float x[], const short x_idx, const unsigned short window_radius);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -78,14 +78,17 @@ int main(void)
 {
   /* USER CODE BEGIN 1 */
 	uint16_t tim6_val;
-	uint16_t raw;
 	char msg[10];
-
-	float x[BUFF_SIZE],
-	x_val = 0;
-
-	short i = -1,
-	i_x = 0;
+    float x[BUFF_SIZE],
+		  x_bar[BUFF_SIZE],
+//		  y[BUFF_SIZE],
+		  x_val,
+		  x_bar_val = 0,
+		  y_hat_val = 0,
+		  y_val = 0;
+    short i,
+		  i_x = 0,
+		  i_x_bar = i_x - (N + 1);
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -95,7 +98,9 @@ int main(void)
 
   /* USER CODE BEGIN Init */
   for (i = 0; i < BUFF_SIZE; i++) {
-  	  x[i] = 0;
+	  x[i] = 0;
+	  x_bar[i] = 0;
+//	  y[i] = 0;
   }
   /* USER CODE END Init */
 
@@ -112,35 +117,47 @@ int main(void)
   MX_TIM6_Init();
   MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
-
+  HAL_TIM_Base_Start(&htim6);
+  tim6_val = __HAL_TIM_GET_COUNTER(&htim6);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+	  if (__HAL_TIM_GET_COUNTER(&htim6) - tim6_val >= MAIN_TRIGGER / 3) {
+		  if (i_x == BUFF_SIZE) {
+			  for (i = 0; i < BUFF_SIZE - 1; i++) {
+				  x[i] = x[i + 1];
+				  x_bar[i] = x_bar[i + 1];
+//				  y[i] = y[i + 1];
+			  }
+			  i_x--;
+			  i_x_bar--;
+		  }
+		  HAL_ADC_Start(&hadc1);
+		  HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
+		  x_val = HAL_ADC_GetValue(&hadc1);
+		  x[i_x] = x_val;
+
+		  x_bar_val = movavg(x_bar_val, x, i_x, N);
+		  if (i_x_bar >= N) {
+			  y_hat_val = x_val - x_bar_val;
+			  y_val = ABS(y_hat_val);
+//		      x_bar[i_x_bar] = x_bar_val;
+//		      y[i_x_bar] = y_val;
+		  }
+
+		  npf_snprintf(msg, sizeof(msg), "%i\r\n", (int) y_val);
+		  HAL_UART_Transmit(&huart2, (uint8_t*)msg, strlen(msg), HAL_MAX_DELAY);
+
+		  i_x++;
+		  i_x_bar++;
+
+		  tim6_val = __HAL_TIM_GET_COUNTER(&htim6);
+	  }
     /* USER CODE END WHILE */
-	  if (__HAL_TIM_GET_COUNTER(&htim6) - tim6_val >= TIM6_FREQ / FS) {
-	  		  HAL_ADC_Start(&hadc1);
-	  		  HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
-	  		  x_val = HAL_ADC_GetValue(&hadc1);
 
-	  		  if (i_x == BUFF_SIZE) {
-	  			  for (i = 0; i < BUFF_SIZE - 1; i++) {
-	  				  x[i] = x[i + 1];
-	  			  }
-	  			  i_x--;
-	  		  }
-	  		  x[i_x] = x_val;
-
-	  		  // npf_snprintf(msg, sizeof(msg), "%.2f", x_val);
-	  		  // sprintf(msg, "%hu\r\n", (int) x_val);
-	  		  raw = 1001;
-	  		  sprintf(msg, "%hu\r\n", raw);
-	  		  HAL_UART_Transmit(&huart2, (uint8_t*)msg, strlen(msg), HAL_MAX_DELAY);
-
-	  		  tim6_val = __HAL_TIM_GET_COUNTER(&htim6);
-	  	  }
     /* USER CODE BEGIN 3 */
   }
   /* USER CODE END 3 */
@@ -275,9 +292,9 @@ static void MX_TIM6_Init(void)
 
   /* USER CODE END TIM6_Init 1 */
   htim6.Instance = TIM6;
-  htim6.Init.Prescaler = 64;
+  htim6.Init.Prescaler = 64-1;
   htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim6.Init.Period = 65535;
+  htim6.Init.Period = 65536-1;
   htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim6) != HAL_OK)
   {
@@ -368,7 +385,17 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
+float movavg(float curr_val, float x[], const short x_idx, const unsigned short window_radius) {
+    const unsigned short R = window_radius, W = 2*R + 1;
+    const short i = x_idx, j = x_idx - (R + 1);
 
+    if (i <= W) {
+        curr_val += x[i] / W;
+    } else {
+        curr_val = curr_val + (x[j + R] - x[j - (R + 1)]) / W;
+    }
+    return curr_val;
+}
 /* USER CODE END 4 */
 
 /**
