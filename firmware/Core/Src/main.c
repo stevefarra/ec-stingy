@@ -22,6 +22,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <string.h>
+#include <stdio.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -31,38 +32,37 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define TIM6_FREQ 1E6
-#define FS 360.0
-#define MAIN_TRIGGER TIM6_FREQ / FS
-#define BUFF_SIZE 720
-#define N 25
-#define S 7
+#define ADC_BUF_LEN 512
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
-#define ABS(x) ((x) < 0 ? -(x) : (x))
+
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
 ADC_HandleTypeDef hadc1;
+DMA_HandleTypeDef hdma_adc1;
 
 TIM_HandleTypeDef htim6;
 
 UART_HandleTypeDef huart2;
+DMA_HandleTypeDef hdma_usart2_tx;
 
 /* USER CODE BEGIN PV */
+uint8_t elapsed_360hz = 0;
+uint16_t adc_buf[ADC_BUF_LEN];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 static void MX_GPIO_Init(void);
+static void MX_DMA_Init(void);
+static void MX_USART2_UART_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_TIM6_Init(void);
-static void MX_USART2_UART_Init(void);
 /* USER CODE BEGIN PFP */
-float movavg(float curr_val, float x[], const short x_idx, const unsigned short window_radius);
-float triangle(float x[], const short y_idx, const unsigned short window_radius);
+void DMATransferComplete(DMA_HandleTypeDef *hdma);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -78,22 +78,13 @@ float triangle(float x[], const short y_idx, const unsigned short window_radius)
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-	uint16_t tim6_val;
-	char msg[10];
-
-	float x[BUFF_SIZE],
-	      x_bar[BUFF_SIZE],
-	      y[BUFF_SIZE],
-		  t[BUFF_SIZE],
-	      x_val,
-		  x_bar_val = 0,
-		  y_hat_val = 0,
-		  y_val = 0,
-		  t_val = 0;
-    short i,
-		  i_x = 0,
-		  i_x_bar = i_x - (N + 1),
-		  i_t = i_x_bar - (S + 1);
+	uint16_t timer_val;
+//	char msg[] =  "Long boat holystone pirate log driver hulk nipperkin cog. " \
+//	                "Buccaneer me lass poop deck spyglass maroon jib spike. Come" \
+//	                "about maroon skysail Corsair bilge water Arr long clothes " \
+//	                "transom.\r\n";
+	char msg[20];
+	uint32_t acc = 0;
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -102,12 +93,7 @@ int main(void)
   HAL_Init();
 
   /* USER CODE BEGIN Init */
-  for (i = 0; i < BUFF_SIZE; i++) {
-	  x[i] = 0;
-	  x_bar[i] = 0;
-	  y[i] = 0;
-	  t[i] = 0;
-  }
+
   /* USER CODE END Init */
 
   /* Configure the system clock */
@@ -119,51 +105,27 @@ int main(void)
 
   /* Initialize all configured peripherals */
   MX_GPIO_Init();
+  MX_DMA_Init();
+  MX_USART2_UART_Init();
   MX_ADC1_Init();
   MX_TIM6_Init();
-  MX_USART2_UART_Init();
   /* USER CODE BEGIN 2 */
-  HAL_TIM_Base_Start(&htim6);
-  tim6_val = __HAL_TIM_GET_COUNTER(&htim6);
+  HAL_DMA_RegisterCallback(&hdma_usart2_tx, HAL_DMA_XFER_CPLT_CB_ID, &DMATransferComplete);
+  HAL_ADC_Start_DMA(&hadc1, (uint32_t*)adc_buf, ADC_BUF_LEN);
+  HAL_TIM_Base_Start_IT(&htim6);
+  timer_val = __HAL_TIM_GET_COUNTER(&htim6);
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  if (__HAL_TIM_GET_COUNTER(&htim6) - tim6_val >= MAIN_TRIGGER / 3) {
-		  if (i_x == BUFF_SIZE) {
-			  for (i = 0; i < BUFF_SIZE - 1; i++) {
-				  x[i] = x[i + 1];
-				  x_bar[i] = x_bar[i + 1];
-				  y[i] = y[i + 1];
-				  t[i] = t[i + 1];
-			  }
-			  i_x--;
-			  i_x_bar--;
-			  i_t--;
-		  }
-		  HAL_ADC_Start(&hadc1);
-		  HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
-		  x_val = HAL_ADC_GetValue(&hadc1);
-		  x[i_x] = x_val;
-
-		  x_bar_val = movavg(x_bar_val, x, i_x, N);
-		  if (i_x_bar >= N) {
-			  y_hat_val = x_val - x_bar_val;
-			  y_val = ABS(y_hat_val);
-		      x_bar[i_x_bar] = x_bar_val;
-		      y[i_x_bar] = y_val;
-		  }
-
-		  npf_snprintf(msg, sizeof(msg), "%i\r\n", (int) y_val);
-		  HAL_UART_Transmit(&huart2, (uint8_t*)msg, strlen(msg), HAL_MAX_DELAY);
-
-		  i_x++;
-		  i_x_bar++;
-		  i_t++;
-
-		  tim6_val = __HAL_TIM_GET_COUNTER(&htim6);
+	  if (elapsed_360hz) {
+		  elapsed_360hz = 0;
+		  sprintf(msg, "%lu\r\n", acc++);
+		  huart2.Instance->CR3 |= USART_CR3_DMAT;
+		  HAL_DMA_Start_IT(&hdma_usart2_tx, (uint32_t)msg, (uint32_t)&huart2.Instance->TDR, strlen(msg));
+		  timer_val = __HAL_TIM_GET_COUNTER(&htim6);
 	  }
     /* USER CODE END WHILE */
 
@@ -242,13 +204,13 @@ static void MX_ADC1_Init(void)
   hadc1.Init.ClockPrescaler = ADC_CLOCK_ASYNC_DIV1;
   hadc1.Init.Resolution = ADC_RESOLUTION_12B;
   hadc1.Init.ScanConvMode = ADC_SCAN_DISABLE;
-  hadc1.Init.ContinuousConvMode = DISABLE;
+  hadc1.Init.ContinuousConvMode = ENABLE;
   hadc1.Init.DiscontinuousConvMode = DISABLE;
   hadc1.Init.ExternalTrigConvEdge = ADC_EXTERNALTRIGCONVEDGE_NONE;
   hadc1.Init.ExternalTrigConv = ADC_SOFTWARE_START;
   hadc1.Init.DataAlign = ADC_DATAALIGN_RIGHT;
   hadc1.Init.NbrOfConversion = 1;
-  hadc1.Init.DMAContinuousRequests = DISABLE;
+  hadc1.Init.DMAContinuousRequests = ENABLE;
   hadc1.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
   hadc1.Init.LowPowerAutoWait = DISABLE;
   hadc1.Init.Overrun = ADC_OVR_DATA_OVERWRITTEN;
@@ -301,9 +263,9 @@ static void MX_TIM6_Init(void)
 
   /* USER CODE END TIM6_Init 1 */
   htim6.Instance = TIM6;
-  htim6.Init.Prescaler = 64-1;
+  htim6.Init.Prescaler = 421;
   htim6.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim6.Init.Period = 65536-1;
+  htim6.Init.Period = 422;
   htim6.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
   if (HAL_TIM_Base_Init(&htim6) != HAL_OK)
   {
@@ -357,6 +319,25 @@ static void MX_USART2_UART_Init(void)
 }
 
 /**
+  * Enable DMA controller clock
+  */
+static void MX_DMA_Init(void)
+{
+
+  /* DMA controller clock enable */
+  __HAL_RCC_DMA1_CLK_ENABLE();
+
+  /* DMA interrupt init */
+  /* DMA1_Channel1_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Channel1_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Channel1_IRQn);
+  /* DMA1_Channel7_IRQn interrupt configuration */
+  HAL_NVIC_SetPriority(DMA1_Channel7_IRQn, 0, 0);
+  HAL_NVIC_EnableIRQ(DMA1_Channel7_IRQn);
+
+}
+
+/**
   * @brief GPIO Initialization Function
   * @param None
   * @retval None
@@ -373,50 +354,37 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
-  /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(LD2_GPIO_Port, LD2_Pin, GPIO_PIN_RESET);
-
   /*Configure GPIO pin : B1_Pin */
   GPIO_InitStruct.Pin = B1_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
 
-  /*Configure GPIO pin : LD2_Pin */
-  GPIO_InitStruct.Pin = LD2_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
-  HAL_GPIO_Init(LD2_GPIO_Port, &GPIO_InitStruct);
-
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */
 }
 
 /* USER CODE BEGIN 4 */
-float movavg(float curr_val, float x[], const short x_idx, const unsigned short window_radius) {
-    const unsigned short R = window_radius, W = 2*R + 1;
-    const short i = x_idx, j = x_idx - (R + 1);
+void DMATransferComplete(DMA_HandleTypeDef *hdma) {
 
-    if (i <= W) {
-        curr_val += x[i] / W;
-    } else {
-        curr_val = curr_val + (x[j + R] - x[j - (R + 1)]) / W;
-    }
-    return curr_val;
+  // Disable UART DMA mode
+  huart2.Instance->CR3 &= ~USART_CR3_DMAT;
 }
 
-float triangle(float x[], const short y_idx, const unsigned short window_radius) {
-    const short j = y_idx;
-    const unsigned short R = window_radius;
+// Called when first half of buffer is filled
+void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef* hadc) {
+  ;
+}
 
-    if (j < 0) {
-        return 0;
-    } else if (j < R) {
-        return x[j] * (x[j] - x[j + R]);
-    } else {
-        return (x[j] - x[j - R]) * (x[j] - x[j + R]);
-    }
+// Called when buffer is completely filled
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc) {
+  ;
+}
+
+void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
+	if (htim->Instance == TIM6) {
+		elapsed_360hz = 1;
+	}
 }
 /* USER CODE END 4 */
 
