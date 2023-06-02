@@ -22,7 +22,6 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include <string.h>
-#include <stdio.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -32,7 +31,7 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define ADC_BUF_LEN 512
+#define ADC_BUF_LEN 128
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -78,13 +77,7 @@ void DMATransferComplete(DMA_HandleTypeDef *hdma);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-	uint16_t timer_val;
-//	char msg[] =  "Long boat holystone pirate log driver hulk nipperkin cog. " \
-//	                "Buccaneer me lass poop deck spyglass maroon jib spike. Come" \
-//	                "about maroon skysail Corsair bilge water Arr long clothes " \
-//	                "transom.\r\n";
 	char msg[20];
-	uint32_t acc = 0;
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -111,9 +104,8 @@ int main(void)
   MX_TIM6_Init();
   /* USER CODE BEGIN 2 */
   HAL_DMA_RegisterCallback(&hdma_usart2_tx, HAL_DMA_XFER_CPLT_CB_ID, &DMATransferComplete);
-  HAL_ADC_Start_DMA(&hadc1, (uint32_t*)adc_buf, ADC_BUF_LEN);
+  // HAL_ADC_Start_DMA(&hadc1, (uint32_t*)adc_buf, ADC_BUF_LEN);
   HAL_TIM_Base_Start_IT(&htim6);
-  timer_val = __HAL_TIM_GET_COUNTER(&htim6);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -122,10 +114,13 @@ int main(void)
   {
 	  if (elapsed_360hz) {
 		  elapsed_360hz = 0;
-		  sprintf(msg, "%lu\r\n", acc++);
+
+		  HAL_ADC_Start(&hadc1);
+		  HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
+
+		  npf_snprintf(msg, 20, "%i\r\n", HAL_ADC_GetValue(&hadc1));
 		  huart2.Instance->CR3 |= USART_CR3_DMAT;
 		  HAL_DMA_Start_IT(&hdma_usart2_tx, (uint32_t)msg, (uint32_t)&huart2.Instance->TDR, strlen(msg));
-		  timer_val = __HAL_TIM_GET_COUNTER(&htim6);
 	  }
     /* USER CODE END WHILE */
 
@@ -365,20 +360,13 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-void DMATransferComplete(DMA_HandleTypeDef *hdma) {
-
-  // Disable UART DMA mode
-  huart2.Instance->CR3 &= ~USART_CR3_DMAT;
-}
-
-// Called when first half of buffer is filled
-void HAL_ADC_ConvHalfCpltCallback(ADC_HandleTypeDef* hadc) {
-  ;
-}
-
-// Called when buffer is completely filled
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc) {
   ;
+}
+
+void DMATransferComplete(DMA_HandleTypeDef *hdma) {
+  // Disable UART DMA mode
+  huart2.Instance->CR3 &= ~USART_CR3_DMAT;
 }
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
