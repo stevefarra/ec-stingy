@@ -31,12 +31,27 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define ADC_BUF_LEN 128
+#define WINDOW(R) (2 * (R) + 1)
+
+#define FS 360
+
+#define N 25
+#define S 7
+#define L 5
+#define M 150
+#define BETA 2.5
+
+#define X_SIZE (WINDOW(N) + 1)
+#define H_SIZE (FS * 2)
+#define T_SIZE (WINDOW(L) + 1)
+#define L1_SIZE (WINDOW(M) + 1)
+
+#define MIN_RR_DIST 0.272*FS
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
 /* USER CODE BEGIN PM */
-
+#define ABS(x) ((x) < 0 ? -(x) : (x))
 /* USER CODE END PM */
 
 /* Private variables ---------------------------------------------------------*/
@@ -49,8 +64,7 @@ UART_HandleTypeDef huart2;
 DMA_HandleTypeDef hdma_usart2_tx;
 
 /* USER CODE BEGIN PV */
-uint8_t elapsed_360hz = 0;
-uint16_t adc_buf[ADC_BUF_LEN];
+uint8_t elapsed_fs = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -61,6 +75,7 @@ static void MX_USART2_UART_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_TIM6_Init(void);
 /* USER CODE BEGIN PFP */
+uint16_t max_index(uint16_t arr[], uint16_t start_idx, uint16_t end_idx);
 void DMATransferComplete(DMA_HandleTypeDef *hdma);
 /* USER CODE END PFP */
 
@@ -77,7 +92,40 @@ void DMATransferComplete(DMA_HandleTypeDef *hdma);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-	char msg[20];
+	char msg[40];
+
+	uint16_t x[X_SIZE];
+	uint16_t h[H_SIZE];
+	float t[T_SIZE];
+	float l1[L1_SIZE];
+
+	uint16_t x_val = 0;
+	float x_bar_val = 0;
+	uint16_t h_val = 0;
+	float t_val1, t_val2;
+	float t_val = 0;
+	float l1_val = 0;
+	float l2_val = 0;
+	float th_val = 0;
+	float theta;
+
+	uint16_t i;
+	uint16_t i_x = 0;
+	uint16_t i_h = 0;
+	uint16_t i_t = 0;
+	uint16_t i_l1 = 0;
+
+	uint8_t prev_aoi;
+	uint8_t aoi = 0;
+
+	uint16_t i_onset;
+	uint16_t i_offset;
+	uint16_t i_cand_max;
+	uint16_t i_curr_max = 0;
+	uint16_t i_prev_max;
+
+	float rr;
+	float bpm;
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -104,7 +152,6 @@ int main(void)
   MX_TIM6_Init();
   /* USER CODE BEGIN 2 */
   HAL_DMA_RegisterCallback(&hdma_usart2_tx, HAL_DMA_XFER_CPLT_CB_ID, &DMATransferComplete);
-  // HAL_ADC_Start_DMA(&hadc1, (uint32_t*)adc_buf, ADC_BUF_LEN);
   HAL_TIM_Base_Start_IT(&htim6);
   /* USER CODE END 2 */
 
@@ -112,15 +159,105 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  if (elapsed_360hz) {
-		  elapsed_360hz = 0;
+	  if (elapsed_fs) {
+		  elapsed_fs = 0;
 
 		  HAL_ADC_Start(&hadc1);
 		  HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
+		  x_val = HAL_ADC_GetValue(&hadc1);
 
-		  npf_snprintf(msg, 20, "%i\r\n", HAL_ADC_GetValue(&hadc1));
-		  huart2.Instance->CR3 |= USART_CR3_DMAT;
-		  HAL_DMA_Start_IT(&hdma_usart2_tx, (uint32_t)msg, (uint32_t)&huart2.Instance->TDR, strlen(msg));
+		  if (i_x == X_SIZE) {
+			  for (i = 0; i < X_SIZE -1; i++) {
+				  x[i] = x[i + 1];
+			  }
+			  i_x--;
+		  }
+		  x[i_x] = x_val;
+		  i_x++;
+
+		  x_bar_val += (float) x_val / WINDOW(N);
+		  if (i_x > WINDOW(N)) {
+			  x_bar_val -= (float) x[0] / WINDOW(N);
+			  h_val = ABS(x_val - x_bar_val);
+
+			  if (i_h == H_SIZE) {
+				  for (i = 0; i < H_SIZE - 1; i++) {
+					  h[i] = h[i + 1];
+				  }
+				  i_h--;
+				  i_onset--;
+				  i_curr_max--;
+				  i_prev_max--;
+			  }
+			  h[i_h] = h_val;
+			  i_h++;
+
+			  if (i_h >= WINDOW(S)) {
+				  t_val1 = h[(i_h - 1) - S] - h[(i_h - 1) - (2 * S)];
+				  t_val2 = h[(i_h - 1) - S] - h[i_h - 1];
+				  t_val = t_val1 * t_val2;
+
+				  if (i_t == T_SIZE) {
+					  for (i = 0; i < T_SIZE - 1; i++) {
+						  t[i] = t[i + 1];
+					  }
+					  i_t--;
+				  }
+				  t[i_t] = t_val;
+				  i_t++;
+
+				  l1_val += t_val / WINDOW(L);
+				  if (i_t > WINDOW(L)) {
+					  l1_val -= t[0] / WINDOW(L);
+					  if (i_l1 == L1_SIZE) {
+						  for (i = 0; i < L1_SIZE - 1; i++) {
+							  l1[i] = l1[i + 1];
+						  }
+						  i_l1--;
+					  }
+					  l1[i_l1] = l1_val;
+					  i_l1++;
+
+					  l2_val += l1_val / WINDOW(M);
+					  if (i_l1 > WINDOW(M)) {
+						  l2_val -= l1[0] / WINDOW(M);
+					  }
+				  }
+				  if (i_l1 > M + 1) {
+					  theta = 0.25 * l2_val;
+					  th_val = BETA*l2_val + theta;
+
+            prev_aoi = aoi;
+            aoi = l1_val >= th_val ? 1 : 0;
+
+            if (aoi - prev_aoi == 1) {
+                i_onset = i_h;
+            } else if (aoi - prev_aoi == -1) {
+                i_offset = i_h;
+                i_cand_max = max_index(h, i_onset, i_offset);
+
+                if (i_curr_max == 0) {
+                    i_curr_max = i_cand_max;
+                } else {
+                    if (i_cand_max - i_curr_max < MIN_RR_DIST) {
+                        if (h[i_cand_max] > h[i_curr_max]) {
+                            i_curr_max = i_cand_max;
+                        } 
+                    } else {
+                        i_prev_max = i_curr_max;
+                        i_curr_max = i_cand_max;
+                        rr = i_curr_max - i_prev_max;
+                        bpm = 60.0 * FS / rr;
+
+                        npf_snprintf(msg, 20, "%f\r\n", bpm);
+                        huart2.Instance->CR3 |= USART_CR3_DMAT;
+                        HAL_DMA_Start_IT(&hdma_usart2_tx, (uint32_t)msg, (uint32_t)&huart2.Instance->TDR, strlen(msg));
+                    }
+                }
+            } 
+				  }
+			  }
+		  }
 	  }
     /* USER CODE END WHILE */
 
@@ -360,8 +497,19 @@ static void MX_GPIO_Init(void)
 }
 
 /* USER CODE BEGIN 4 */
-void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc) {
-  ;
+uint16_t max_index(uint16_t arr[], uint16_t start_idx, uint16_t end_idx) {
+
+    uint16_t max_value = arr[start_idx];
+    uint16_t max_index = start_idx;
+
+    for (uint16_t i = start_idx + 1; i <= end_idx; i++) {
+        if (arr[i] > max_value) {
+            max_value = arr[i];
+            max_index = i;
+        }
+    }
+
+    return max_index;
 }
 
 void DMATransferComplete(DMA_HandleTypeDef *hdma) {
@@ -371,7 +519,7 @@ void DMATransferComplete(DMA_HandleTypeDef *hdma) {
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	if (htim->Instance == TIM6) {
-		elapsed_360hz = 1;
+		elapsed_fs = 1;
 	}
 }
 /* USER CODE END 4 */
