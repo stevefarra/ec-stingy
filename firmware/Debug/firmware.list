@@ -3934,7 +3934,7 @@ int main(void)
 				  if (i_t > WINDOW(L)) {
  800225e:	f8b7 3b4c 	ldrh.w	r3, [r7, #2892]	; 0xb4c
  8002262:	2b0b      	cmp	r3, #11
- 8002264:	f240 808a 	bls.w	800237c <main+0x4dc>
+ 8002264:	f67f ae69 	bls.w	8001f3a <main+0x9a>
 					  l1_val -= t[0] / WINDOW(L);
  8002268:	f507 6336 	add.w	r3, r7, #2912	; 0xb60
  800226c:	f2a3 63a4 	subw	r3, r3, #1700	; 0x6a4
@@ -4030,19 +4030,19 @@ int main(void)
  8002374:	f607 3354 	addw	r3, r7, #2900	; 0xb54
  8002378:	edc3 7a00 	vstr	s15, [r3]
 					  }
-				  }
-				  if (i_l1 > M + 1) {
+
+					  if (i_l1 > M + 1) {
  800237c:	f8b7 3b4a 	ldrh.w	r3, [r7, #2890]	; 0xb4a
  8002380:	2b97      	cmp	r3, #151	; 0x97
  8002382:	f67f adda 	bls.w	8001f3a <main+0x9a>
-					  theta = 0.25 * l2_val;
+					  					  theta = 0.25 * l2_val;
  8002386:	f607 3354 	addw	r3, r7, #2900	; 0xb54
  800238a:	edd3 7a00 	vldr	s15, [r3]
  800238e:	eeb5 7a00 	vmov.f32	s14, #80	; 0x3e800000  0.250
  8002392:	ee67 7a87 	vmul.f32	s15, s15, s14
  8002396:	f607 3328 	addw	r3, r7, #2856	; 0xb28
  800239a:	edc3 7a00 	vstr	s15, [r3]
-					  th_val = BETA*l2_val + theta;
+					  					  th_val = BETA*l2_val + theta;
  800239e:	f607 3354 	addw	r3, r7, #2900	; 0xb54
  80023a2:	6818      	ldr	r0, [r3, #0]
  80023a4:	f7fe f9a6 	bl	80006f4 <__aeabi_f2d>
@@ -4070,10 +4070,10 @@ int main(void)
  80023de:	f607 3234 	addw	r2, r7, #2868	; 0xb34
  80023e2:	6013      	str	r3, [r2, #0]
 
-					  prev_aoi = aoi;
+					  					  prev_aoi = aoi;
  80023e4:	f897 3b49 	ldrb.w	r3, [r7, #2889]	; 0xb49
  80023e8:	f887 3b27 	strb.w	r3, [r7, #2855]	; 0xb27
-					  aoi = l1_val >= th_val ? 1 : 0;
+					  					  aoi = l1_val >= th_val ? 1 : 0;
  80023ec:	f607 3358 	addw	r3, r7, #2904	; 0xb58
  80023f0:	ed93 7a00 	vldr	s14, [r3]
  80023f4:	f607 3334 	addw	r3, r7, #2868	; 0xb34
@@ -4086,26 +4086,26 @@ int main(void)
  800240a:	b2db      	uxtb	r3, r3
  800240c:	f887 3b49 	strb.w	r3, [r7, #2889]	; 0xb49
 
-					  if (aoi - prev_aoi == 1) {
+					  					  if (aoi - prev_aoi == 1) {
  8002410:	f897 2b49 	ldrb.w	r2, [r7, #2889]	; 0xb49
  8002414:	f897 3b27 	ldrb.w	r3, [r7, #2855]	; 0xb27
  8002418:	1ad3      	subs	r3, r2, r3
  800241a:	2b01      	cmp	r3, #1
  800241c:	d104      	bne.n	8002428 <main+0x588>
-						  i_onset = i_h;
+					  						  i_onset = i_h;
  800241e:	f8b7 3b4e 	ldrh.w	r3, [r7, #2894]	; 0xb4e
  8002422:	f8a7 3b46 	strh.w	r3, [r7, #2886]	; 0xb46
  8002426:	e588      	b.n	8001f3a <main+0x9a>
-					  } else if (aoi - prev_aoi == -1) {
+					  					  } else if (aoi - prev_aoi == -1) {
  8002428:	f897 2b49 	ldrb.w	r2, [r7, #2889]	; 0xb49
  800242c:	f897 3b27 	ldrb.w	r3, [r7, #2855]	; 0xb27
  8002430:	1ad3      	subs	r3, r2, r3
  8002432:	f1b3 3fff 	cmp.w	r3, #4294967295
  8002436:	f47f ad80 	bne.w	8001f3a <main+0x9a>
-						  i_offset = i_h;
+					  						  i_offset = i_h;
  800243a:	f8b7 3b4e 	ldrh.w	r3, [r7, #2894]	; 0xb4e
  800243e:	f8a7 3b24 	strh.w	r3, [r7, #2852]	; 0xb24
-						  i_cand_max = max_index(h, i_onset, i_offset);
+					  						  i_cand_max = max_index(h, i_onset, i_offset);
  8002442:	f8b7 2b24 	ldrh.w	r2, [r7, #2852]	; 0xb24
  8002446:	f8b7 1b46 	ldrh.w	r1, [r7, #2886]	; 0xb46
  800244a:	f207 43ec 	addw	r3, r7, #1260	; 0x4ec
@@ -4114,22 +4114,22 @@ int main(void)
  8002454:	4603      	mov	r3, r0
  8002456:	f8a7 3b22 	strh.w	r3, [r7, #2850]	; 0xb22
 
-						  if (i_curr_max == 0) {
+					  						  if (i_curr_max == 0) {
  800245a:	f8b7 3b44 	ldrh.w	r3, [r7, #2884]	; 0xb44
  800245e:	2b00      	cmp	r3, #0
  8002460:	d104      	bne.n	800246c <main+0x5cc>
-							  i_curr_max = i_cand_max;
+					  							  i_curr_max = i_cand_max;
  8002462:	f8b7 3b22 	ldrh.w	r3, [r7, #2850]	; 0xb22
  8002466:	f8a7 3b44 	strh.w	r3, [r7, #2884]	; 0xb44
  800246a:	e566      	b.n	8001f3a <main+0x9a>
-						  } else {
-							  if (i_cand_max - i_curr_max < MIN_RR_DIST) {
+					  						  } else {
+					  							  if (i_cand_max - i_curr_max < MIN_RR_DIST) {
  800246c:	f8b7 2b22 	ldrh.w	r2, [r7, #2850]	; 0xb22
  8002470:	f8b7 3b44 	ldrh.w	r3, [r7, #2884]	; 0xb44
  8002474:	1ad3      	subs	r3, r2, r3
  8002476:	2b61      	cmp	r3, #97	; 0x61
  8002478:	dc17      	bgt.n	80024aa <main+0x60a>
-								  if (h[i_cand_max] > h[i_curr_max]) {
+					  								  if (h[i_cand_max] > h[i_curr_max]) {
  800247a:	f8b7 2b22 	ldrh.w	r2, [r7, #2850]	; 0xb22
  800247e:	f507 6336 	add.w	r3, r7, #2912	; 0xb60
  8002482:	f2a3 6374 	subw	r3, r3, #1652	; 0x674
@@ -4140,24 +4140,24 @@ int main(void)
  8002496:	f833 3011 	ldrh.w	r3, [r3, r1, lsl #1]
  800249a:	429a      	cmp	r2, r3
  800249c:	f67f ad4d 	bls.w	8001f3a <main+0x9a>
-									  i_curr_max = i_cand_max;
+					  									  i_curr_max = i_cand_max;
  80024a0:	f8b7 3b22 	ldrh.w	r3, [r7, #2850]	; 0xb22
  80024a4:	f8a7 3b44 	strh.w	r3, [r7, #2884]	; 0xb44
  80024a8:	e547      	b.n	8001f3a <main+0x9a>
-								  }
-							  } else {
-								  i_prev_max = i_curr_max;
+					  								  }
+					  							  } else {
+					  								  i_prev_max = i_curr_max;
  80024aa:	f8b7 3b44 	ldrh.w	r3, [r7, #2884]	; 0xb44
  80024ae:	f8a7 3b42 	strh.w	r3, [r7, #2882]	; 0xb42
-								  i_curr_max = i_cand_max;
+					  								  i_curr_max = i_cand_max;
  80024b2:	f8b7 3b22 	ldrh.w	r3, [r7, #2850]	; 0xb22
  80024b6:	f8a7 3b44 	strh.w	r3, [r7, #2884]	; 0xb44
-								  rr = i_curr_max - i_prev_max;
+					  								  rr = i_curr_max - i_prev_max;
  80024ba:	f8b7 2b44 	ldrh.w	r2, [r7, #2884]	; 0xb44
  80024be:	f8b7 3b42 	ldrh.w	r3, [r7, #2882]	; 0xb42
  80024c2:	1ad3      	subs	r3, r2, r3
  80024c4:	f8a7 3b20 	strh.w	r3, [r7, #2848]	; 0xb20
-								  bpm = 60.0 * FS / (float) rr;
+					  								  bpm = 60.0 * FS / (float) rr;
  80024c8:	f8b7 3b20 	ldrh.w	r3, [r7, #2848]	; 0xb20
  80024cc:	ee07 3a90 	vmov	s15, r3
  80024d0:	eeb8 7a67 	vcvt.f32.u32	s14, s15
@@ -4166,7 +4166,7 @@ int main(void)
  80024dc:	f607 331c 	addw	r3, r7, #2844	; 0xb1c
  80024e0:	edc3 7a00 	vstr	s15, [r3]
 
-								  npf_snprintf(msg, 20, "%u\r\n", rounded(bpm));
+					  								  npf_snprintf(msg, 20, "%u\r\n", rounded(bpm));
  80024e4:	f607 331c 	addw	r3, r7, #2844	; 0xb1c
  80024e8:	ed93 0a00 	vldr	s0, [r3]
  80024ec:	f000 fa46 	bl	800297c <rounded>
@@ -4175,7 +4175,7 @@ int main(void)
  80024f6:	4a11      	ldr	r2, [pc, #68]	; (800253c <main+0x69c>)
  80024f8:	2114      	movs	r1, #20
  80024fa:	f7ff fc8d 	bl	8001e18 <npf_snprintf>
-								  huart2.Instance->CR3 |= USART_CR3_DMAT;
+					  								  huart2.Instance->CR3 |= USART_CR3_DMAT;
  80024fe:	4b10      	ldr	r3, [pc, #64]	; (8002540 <main+0x6a0>)
  8002500:	681b      	ldr	r3, [r3, #0]
  8002502:	689a      	ldr	r2, [r3, #8]
@@ -4183,7 +4183,7 @@ int main(void)
  8002506:	681b      	ldr	r3, [r3, #0]
  8002508:	f042 0280 	orr.w	r2, r2, #128	; 0x80
  800250c:	609a      	str	r2, [r3, #8]
-								  HAL_DMA_Start_IT(&hdma_usart2_tx, (uint32_t)msg, (uint32_t)&huart2.Instance->TDR, strlen(msg));
+					  								  HAL_DMA_Start_IT(&hdma_usart2_tx, (uint32_t)msg, (uint32_t)&huart2.Instance->TDR, strlen(msg));
  800250e:	f607 24f4 	addw	r4, r7, #2804	; 0xaf4
  8002512:	4b0b      	ldr	r3, [pc, #44]	; (8002540 <main+0x6a0>)
  8002514:	681b      	ldr	r3, [r3, #0]

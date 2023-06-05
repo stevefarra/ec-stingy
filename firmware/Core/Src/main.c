@@ -228,39 +228,40 @@ int main(void)
 					  if (i_l1 > WINDOW(M)) {
 						  l2_val -= l1[0] / WINDOW(M);
 					  }
-				  }
-				  if (i_l1 > M + 1) {
-					  theta = 0.25 * l2_val;
-					  th_val = BETA*l2_val + theta;
 
-					  prev_aoi = aoi;
-					  aoi = l1_val >= th_val ? 1 : 0;
+					  if (i_l1 > M + 1) {
+					  					  theta = 0.25 * l2_val;
+					  					  th_val = BETA*l2_val + theta;
 
-					  if (aoi - prev_aoi == 1) {
-						  i_onset = i_h;
-					  } else if (aoi - prev_aoi == -1) {
-						  i_offset = i_h;
-						  i_cand_max = max_index(h, i_onset, i_offset);
+					  					  prev_aoi = aoi;
+					  					  aoi = l1_val >= th_val ? 1 : 0;
 
-						  if (i_curr_max == 0) {
-							  i_curr_max = i_cand_max;
-						  } else {
-							  if (i_cand_max - i_curr_max < MIN_RR_DIST) {
-								  if (h[i_cand_max] > h[i_curr_max]) {
-									  i_curr_max = i_cand_max;
-								  }
-							  } else {
-								  i_prev_max = i_curr_max;
-								  i_curr_max = i_cand_max;
-								  rr = i_curr_max - i_prev_max;
-								  bpm = 60.0 * FS / (float) rr;
+					  					  if (aoi - prev_aoi == 1) {
+					  						  i_onset = i_h;
+					  					  } else if (aoi - prev_aoi == -1) {
+					  						  i_offset = i_h;
+					  						  i_cand_max = max_index(h, i_onset, i_offset);
 
-								  npf_snprintf(msg, 20, "%u\r\n", rounded(bpm));
-								  huart2.Instance->CR3 |= USART_CR3_DMAT;
-								  HAL_DMA_Start_IT(&hdma_usart2_tx, (uint32_t)msg, (uint32_t)&huart2.Instance->TDR, strlen(msg));
-							  }
-						  }
-					  }
+					  						  if (i_curr_max == 0) {
+					  							  i_curr_max = i_cand_max;
+					  						  } else {
+					  							  if (i_cand_max - i_curr_max < MIN_RR_DIST) {
+					  								  if (h[i_cand_max] > h[i_curr_max]) {
+					  									  i_curr_max = i_cand_max;
+					  								  }
+					  							  } else {
+					  								  i_prev_max = i_curr_max;
+					  								  i_curr_max = i_cand_max;
+					  								  rr = i_curr_max - i_prev_max;
+					  								  bpm = 60.0 * FS / (float) rr;
+
+					  								  npf_snprintf(msg, 20, "%u\r\n", rounded(bpm));
+					  								  huart2.Instance->CR3 |= USART_CR3_DMAT;
+					  								  HAL_DMA_Start_IT(&hdma_usart2_tx, (uint32_t)msg, (uint32_t)&huart2.Instance->TDR, strlen(msg));
+					  							  }
+					  						  }
+					  					  }
+					  				  }
 				  }
 			  }
 		  }
