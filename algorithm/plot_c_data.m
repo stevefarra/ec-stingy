@@ -36,4 +36,3 @@ plot(aoi,'k');
 hold off;
 legend('Lowpass Filter (l)', 'Threshold (th)', 'Areas of Interest (aoi)');
 title('Outputs overlayed (l, th, aoi)');
-

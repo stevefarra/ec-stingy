@@ -58,8 +58,6 @@
 ADC_HandleTypeDef hadc1;
 DMA_HandleTypeDef hdma_adc1;
 
-SPI_HandleTypeDef hspi1;
-
 TIM_HandleTypeDef htim6;
 
 UART_HandleTypeDef huart2;
@@ -76,7 +74,6 @@ static void MX_DMA_Init(void);
 static void MX_USART2_UART_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_TIM6_Init(void);
-static void MX_SPI1_Init(void);
 /* USER CODE BEGIN PFP */
 uint16_t max_index(uint16_t arr[], uint16_t start_idx, uint16_t end_idx);
 uint8_t rounded(float num);
@@ -105,6 +102,7 @@ int main(void)
 
 	uint16_t x_val = 0;
 	float x_bar_val = 0;
+	short h_hat_val = 0;
 	uint16_t h_val = 0;
 	float t_val1, t_val2;
 	float t_val = 0;
@@ -129,7 +127,7 @@ int main(void)
 	uint16_t i_prev_max;
 
 	uint16_t rr;
-	float bpm;
+	float bpm = 0;
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -154,7 +152,6 @@ int main(void)
   MX_USART2_UART_Init();
   MX_ADC1_Init();
   MX_TIM6_Init();
-  MX_SPI1_Init();
   /* USER CODE BEGIN 2 */
   HAL_DMA_RegisterCallback(&hdma_usart2_tx, HAL_DMA_XFER_CPLT_CB_ID, &DMATransferComplete);
   HAL_TIM_Base_Start_IT(&htim6);
@@ -183,7 +180,14 @@ int main(void)
 		  x_bar_val += (float) x_val / WINDOW(N);
 		  if (i_x > WINDOW(N)) {
 			  x_bar_val -= (float) x[0] / WINDOW(N);
-			  h_val = ABS(x_val - x_bar_val);
+
+			  h_hat_val = x_val - x_bar_val;
+
+			  npf_snprintf(msg, 20, "%hi,%hu\r\n", h_hat_val, rounded(bpm));
+			  huart2.Instance->CR3 |= USART_CR3_DMAT;
+			  HAL_DMA_Start_IT(&hdma_usart2_tx, (uint32_t)msg, (uint32_t)&huart2.Instance->TDR, strlen(msg));
+
+			  h_val = ABS(h_hat_val);
 
 			  if (i_h == H_SIZE) {
 				  for (i = 0; i < H_SIZE - 1; i++) {
@@ -230,38 +234,34 @@ int main(void)
 					  }
 
 					  if (i_l1 > M + 1) {
-					  					  theta = 0.25 * l2_val;
-					  					  th_val = BETA*l2_val + theta;
+						  theta = 0.25 * l2_val;
+						  th_val = BETA*l2_val + theta;
 
-					  					  prev_aoi = aoi;
-					  					  aoi = l1_val >= th_val ? 1 : 0;
+						  prev_aoi = aoi;
+						  aoi = l1_val >= th_val ? 1 : 0;
 
-					  					  if (aoi - prev_aoi == 1) {
-					  						  i_onset = i_h;
-					  					  } else if (aoi - prev_aoi == -1) {
-					  						  i_offset = i_h;
-					  						  i_cand_max = max_index(h, i_onset, i_offset);
+						  if (aoi - prev_aoi == 1) {
+							  i_onset = i_h;
+						  } else if (aoi - prev_aoi == -1) {
+							  i_offset = i_h;
+							  i_cand_max = max_index(h, i_onset, i_offset);
 
-					  						  if (i_curr_max == 0) {
-					  							  i_curr_max = i_cand_max;
-					  						  } else {
-					  							  if (i_cand_max - i_curr_max < MIN_RR_DIST) {
-					  								  if (h[i_cand_max] > h[i_curr_max]) {
-					  									  i_curr_max = i_cand_max;
-					  								  }
-					  							  } else {
-					  								  i_prev_max = i_curr_max;
-					  								  i_curr_max = i_cand_max;
-					  								  rr = i_curr_max - i_prev_max;
-					  								  bpm = 60.0 * FS / (float) rr;
-
-					  								  npf_snprintf(msg, 20, "%u\r\n", rounded(bpm));
-					  								  huart2.Instance->CR3 |= USART_CR3_DMAT;
-					  								  HAL_DMA_Start_IT(&hdma_usart2_tx, (uint32_t)msg, (uint32_t)&huart2.Instance->TDR, strlen(msg));
-					  							  }
-					  						  }
-					  					  }
-					  				  }
+							  if (i_curr_max == 0) {
+								  i_curr_max = i_cand_max;
+							  } else {
+								  if (i_cand_max - i_curr_max < MIN_RR_DIST) {
+									  if (h[i_cand_max] > h[i_curr_max]) {
+										  i_curr_max = i_cand_max;
+									  }
+								  } else {
+									  i_prev_max = i_curr_max;
+									  i_curr_max = i_cand_max;
+									  rr = i_curr_max - i_prev_max;
+									  bpm = 60.0 * FS / (float) rr;
+								  }
+							  }
+						  }
+					  }
 				  }
 			  }
 		  }
@@ -385,46 +385,6 @@ static void MX_ADC1_Init(void)
 }
 
 /**
-  * @brief SPI1 Initialization Function
-  * @param None
-  * @retval None
-  */
-static void MX_SPI1_Init(void)
-{
-
-  /* USER CODE BEGIN SPI1_Init 0 */
-
-  /* USER CODE END SPI1_Init 0 */
-
-  /* USER CODE BEGIN SPI1_Init 1 */
-
-  /* USER CODE END SPI1_Init 1 */
-  /* SPI1 parameter configuration*/
-  hspi1.Instance = SPI1;
-  hspi1.Init.Mode = SPI_MODE_MASTER;
-  hspi1.Init.Direction = SPI_DIRECTION_2LINES;
-  hspi1.Init.DataSize = SPI_DATASIZE_4BIT;
-  hspi1.Init.CLKPolarity = SPI_POLARITY_LOW;
-  hspi1.Init.CLKPhase = SPI_PHASE_1EDGE;
-  hspi1.Init.NSS = SPI_NSS_SOFT;
-  hspi1.Init.BaudRatePrescaler = SPI_BAUDRATEPRESCALER_4;
-  hspi1.Init.FirstBit = SPI_FIRSTBIT_MSB;
-  hspi1.Init.TIMode = SPI_TIMODE_DISABLE;
-  hspi1.Init.CRCCalculation = SPI_CRCCALCULATION_DISABLE;
-  hspi1.Init.CRCPolynomial = 7;
-  hspi1.Init.CRCLength = SPI_CRC_LENGTH_DATASIZE;
-  hspi1.Init.NSSPMode = SPI_NSS_PULSE_ENABLE;
-  if (HAL_SPI_Init(&hspi1) != HAL_OK)
-  {
-    Error_Handler();
-  }
-  /* USER CODE BEGIN SPI1_Init 2 */
-
-  /* USER CODE END SPI1_Init 2 */
-
-}
-
-/**
   * @brief TIM6 Initialization Function
   * @param None
   * @retval None
@@ -533,11 +493,21 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOA_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(Green_Led_GPIO_Port, Green_Led_Pin, GPIO_PIN_RESET);
+
   /*Configure GPIO pin : B1_Pin */
   GPIO_InitStruct.Pin = B1_Pin;
   GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   HAL_GPIO_Init(B1_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : Green_Led_Pin */
+  GPIO_InitStruct.Pin = Green_Led_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+  HAL_GPIO_Init(Green_Led_GPIO_Port, &GPIO_InitStruct);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */

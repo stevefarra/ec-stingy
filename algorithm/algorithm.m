@@ -1,3 +1,5 @@
+pkg load signal;
+
 % Load the ECG signal
 data_file = 'scope.csv';
 data = csvread(data_file);
@@ -12,6 +14,7 @@ beta = 2.5;  % Modified threshold calculation parameter
 M = 150;     % Modified threshold calculation parameter
 
 x_bar = zeros(length(x), 1);
+y_hat = zeros(length(x), 1);
 y = zeros(length(x), 1);
 t = zeros(length(x), 1);
 l = zeros(length(x), 1);
@@ -21,7 +24,8 @@ th = zeros(length(x), 1);
 
 % Implement the high-pass filter
 x_bar = movmean(x, 2*N + 1);
-y = abs(x - x_bar);
+y_hat = x - x_bar;
+y = abs(y_hat);
 
 % Implement the triangle template matching
 for i = s+1:length(y)-s
@@ -73,46 +77,60 @@ for i = 1:length(l)
     end
 end
 
-% Plot the signals on separate subplots in the same figure
-t_plot = (1:length(x)) / Fs;
-r_peak_times = r_peaks / Fs;
+% Notch filter design
+f_notch = 59; % Notch frequency in Hz
+bw = 10; % Notch bandwidth in Hz
+wo = f_notch/(Fs/2); % Normalized frequency
+bw_norm = bw/(Fs/2); % Normalized bandwidth
+[b, a] = pei_tseng_notch(wo, bw_norm); % Filter coefficients
+ecg_2 = filter(b, a, y_hat); % Output signal
 
-% Print heartrates to command window
-disp(60 ./ diff(r_peak_times));
 
-figure;
-% Original ECG signal
-subplot(4,1,1);
-plot(t_plot, x);
-xlabel('Time (s)');
-ylabel('Amplitude');
-title('Original ECG Signal');
-
-% Filtered ECG signal with R-peaks overlay
-subplot(4,1,2);
-plot(t_plot, y);
-hold on;
-scatter(r_peak_times, y(r_peaks), 'r', 'filled');
-hold off;
-xlabel('Time (s)');
-ylabel('Amplitude');
-title('High-pass Filtered ECG Signal with R-peaks Overlay');
-legend('Filtered ECG', 'R-peaks');
-
-% Triangle template matching output
-subplot(4,1,3);
-plot(t_plot, t);
-xlabel('Time (s)');
-ylabel('Amplitude');
-title('Triangle Template Matching Output');
-
-% Low-pass filtered signal with modified threshold overlay
-subplot(4,1,4);
-plot(t_plot, l, 'b');
-hold on;
-plot(t_plot, th, 'r');
-hold off;
-xlabel('Time (s)');
-ylabel('Amplitude');
-title('Low-pass Filtered Triangle Template Matching Output with Modified Threshold Overlay');
-legend('Low-pass Filtered', 'Modified Threshold');
+##% View the frequency spectrum of a signal
+##plot((0:length(x) - 1) * (Fs / length(x)), abs(fft(y_hat)));
+##
+##% Print heartrates to command window
+##r_peak_times = r_peaks / Fs;
+##bpm_readings = 60 ./ diff(r_peak_times);
+##disp('bpm readings:');
+##disp(bpm_readings);
+##
+##% Plot the signals on separate subplots in the same figure
+##t_plot = (1:length(x)) / Fs;
+##
+##figure;
+##% Original ECG signal
+##subplot(4,1,1);
+##plot(t_plot, x);
+##xlabel('Time (s)');
+##ylabel('Amplitude');
+##title('Original ECG Signal');
+##
+##% Filtered ECG signal with R-peaks overlay
+##subplot(4,1,2);
+##plot(t_plot, y);
+##hold on;
+##scatter(r_peak_times, y(r_peaks), 'r', 'filled');
+##hold off;
+##xlabel('Time (s)');
+##ylabel('Amplitude');
+##title('High-pass Filtered ECG Signal with R-peaks Overlay');
+##legend('Filtered ECG', 'R-peaks');
+##
+##% Triangle template matching output
+##subplot(4,1,3);
+##plot(t_plot, t);
+##xlabel('Time (s)');
+##ylabel('Amplitude');
+##title('Triangle Template Matching Output');
+##
+##% Low-pass filtered signal with modified threshold overlay
+##subplot(4,1,4);
+##plot(t_plot, l, 'b');
+##hold on;
+##plot(t_plot, th, 'r');
+##hold off;
+##xlabel('Time (s)');
+##ylabel('Amplitude');
+##title('Low-pass Filtered Triangle Template Matching Output with Modified Threshold Overlay');
+##legend('Low-pass Filtered', 'Modified Threshold');

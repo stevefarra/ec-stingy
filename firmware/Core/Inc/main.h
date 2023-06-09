@@ -61,6 +61,8 @@ void Error_Handler(void);
 #define B1_GPIO_Port GPIOC
 #define RCC_OSC32_OUT_Pin GPIO_PIN_15
 #define RCC_OSC32_OUT_GPIO_Port GPIOC
+#define Green_Led_Pin GPIO_PIN_5
+#define Green_Led_GPIO_Port GPIOA
 #define TMS_Pin GPIO_PIN_13
 #define TMS_GPIO_Port GPIOA
 #define TCK_Pin GPIO_PIN_14
