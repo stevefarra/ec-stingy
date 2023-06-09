@@ -46,7 +46,7 @@
 #define T_SIZE (WINDOW(L) + 1)
 #define L1_SIZE (WINDOW(M) + 1)
 
-#define MIN_RR_DIST 0.272*FS
+#define MIN_RR_DIST (0.272 * FS)
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -64,7 +64,8 @@ UART_HandleTypeDef huart2;
 DMA_HandleTypeDef hdma_usart2_tx;
 
 /* USER CODE BEGIN PV */
-uint8_t elapsed_fs = 0;
+uint8_t fs_elapsed_flag = 0;
+uint8_t r_peak_detected_flag = 0;
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -128,6 +129,8 @@ int main(void)
 
 	uint16_t rr;
 	float bpm = 0;
+
+	uint8_t led_counter = 0;
   /* USER CODE END 1 */
 
   /* MCU Configuration--------------------------------------------------------*/
@@ -161,107 +164,139 @@ int main(void)
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-	  if (elapsed_fs) {
-		  elapsed_fs = 0;
+	  if (fs_elapsed_flag) {
+		  fs_elapsed_flag = 0;
 
-		  HAL_ADC_Start(&hadc1);
-		  HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
-		  x_val = HAL_ADC_GetValue(&hadc1);
-
-		  if (i_x == X_SIZE) {
-			  for (i = 0; i < X_SIZE -1; i++) {
-				  x[i] = x[i + 1];
+		  if (led_counter > 0) {
+			  if (led_counter == (FS / 20) + 1) {
+				  led_counter = 0;
+				  HAL_GPIO_WritePin(Green_Led_GPIO_Port, Green_Led_Pin, GPIO_PIN_RESET);
+			  } else {
+				  led_counter++;
 			  }
-			  i_x--;
 		  }
-		  x[i_x] = x_val;
-		  i_x++;
 
-		  x_bar_val += (float) x_val / WINDOW(N);
-		  if (i_x > WINDOW(N)) {
-			  x_bar_val -= (float) x[0] / WINDOW(N);
+		  if (HAL_GPIO_ReadPin(AD8232_LOD_GPIO_Port, AD8232_LOD_Pin) == GPIO_PIN_SET) {
+			  x_bar_val = 0;
+			  l1_val = 0;
+			  l2_val = 0;
+			  i_x = 0;
+			  i_h = 0;
+			  i_t = 0;
+			  i_l1 = 0;
+			  aoi = 0;
+			  i_curr_max = 0;
+			  bpm = 0;
+		  } else {
+			  HAL_ADC_Start(&hadc1);
+			  HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
+			  x_val = HAL_ADC_GetValue(&hadc1);
 
-			  h_hat_val = x_val - x_bar_val;
-
-			  npf_snprintf(msg, 20, "%hi,%hu\r\n", h_hat_val, rounded(bpm));
-			  huart2.Instance->CR3 |= USART_CR3_DMAT;
-			  HAL_DMA_Start_IT(&hdma_usart2_tx, (uint32_t)msg, (uint32_t)&huart2.Instance->TDR, strlen(msg));
-
-			  h_val = ABS(h_hat_val);
-
-			  if (i_h == H_SIZE) {
-				  for (i = 0; i < H_SIZE - 1; i++) {
-					  h[i] = h[i + 1];
+			  if (i_x == X_SIZE) {
+				  for (i = 0; i < X_SIZE -1; i++) {
+					  x[i] = x[i + 1];
 				  }
-				  i_h--;
-				  i_onset--;
-				  i_curr_max--;
-				  i_prev_max--;
+				  i_x--;
 			  }
-			  h[i_h] = h_val;
-			  i_h++;
+			  x[i_x] = x_val;
+			  i_x++;
 
-			  if (i_h >= WINDOW(S)) {
-				  t_val1 = h[(i_h - 1) - S] - h[(i_h - 1) - (2 * S)];
-				  t_val2 = h[(i_h - 1) - S] - h[i_h - 1];
-				  t_val = t_val1 * t_val2;
+			  x_bar_val += (float) x_val / WINDOW(N);
+			  if (i_x > WINDOW(N)) {
+				  x_bar_val -= (float) x[0] / WINDOW(N);
 
-				  if (i_t == T_SIZE) {
-					  for (i = 0; i < T_SIZE - 1; i++) {
-						  t[i] = t[i + 1];
+				  h_hat_val = x_val - x_bar_val;
+				  h_val = ABS(h_hat_val);
+
+				  if (i_h == H_SIZE) {
+					  for (i = 0; i < H_SIZE - 1; i++) {
+						  h[i] = h[i + 1];
 					  }
-					  i_t--;
+					  i_h--;
+					  i_onset--;
+					  i_curr_max--;
+					  i_prev_max--;
 				  }
-				  t[i_t] = t_val;
-				  i_t++;
+				  h[i_h] = h_val;
+				  i_h++;
 
-				  l1_val += t_val / WINDOW(L);
-				  if (i_t > WINDOW(L)) {
-					  l1_val -= t[0] / WINDOW(L);
+				  if (i_h >= WINDOW(S)) {
+					  t_val1 = h[(i_h - 1) - S] - h[(i_h - 1) - (2 * S)];
+					  t_val2 = h[(i_h - 1) - S] - h[i_h - 1];
+					  t_val = t_val1 * t_val2;
 
-					  if (i_l1 == L1_SIZE) {
-						  for (i = 0; i < L1_SIZE - 1; i++) {
-							  l1[i] = l1[i + 1];
+					  if (i_t == T_SIZE) {
+						  for (i = 0; i < T_SIZE - 1; i++) {
+							  t[i] = t[i + 1];
 						  }
-						  i_l1--;
+						  i_t--;
 					  }
-					  l1[i_l1] = l1_val;
-					  i_l1++;
+					  t[i_t] = t_val;
+					  i_t++;
 
-					  l2_val += l1_val / WINDOW(M);
-					  if (i_l1 > WINDOW(M)) {
-						  l2_val -= l1[0] / WINDOW(M);
-					  }
+					  l1_val += t_val / WINDOW(L);
+					  if (i_t > WINDOW(L)) {
+						  l1_val -= t[0] / WINDOW(L);
 
-					  if (i_l1 > M + 1) {
-						  theta = 0.25 * l2_val;
-						  th_val = BETA*l2_val + theta;
+						  if (i_l1 == L1_SIZE) {
+							  for (i = 0; i < L1_SIZE - 1; i++) {
+								  l1[i] = l1[i + 1];
+							  }
+							  i_l1--;
+						  }
+						  l1[i_l1] = l1_val;
+						  i_l1++;
 
-						  prev_aoi = aoi;
-						  aoi = l1_val >= th_val ? 1 : 0;
+						  l2_val += l1_val / WINDOW(M);
+						  if (i_l1 > WINDOW(M)) {
+							  l2_val -= l1[0] / WINDOW(M);
+						  }
 
-						  if (aoi - prev_aoi == 1) {
-							  i_onset = i_h;
-						  } else if (aoi - prev_aoi == -1) {
-							  i_offset = i_h;
-							  i_cand_max = max_index(h, i_onset, i_offset);
+						  if (i_l1 > M + 1) {
+							  theta = 0.25 * l2_val;
+							  th_val = BETA*l2_val + theta;
 
-							  if (i_curr_max == 0) {
-								  i_curr_max = i_cand_max;
-							  } else {
-								  if (i_cand_max - i_curr_max < MIN_RR_DIST) {
-									  if (h[i_cand_max] > h[i_curr_max]) {
-										  i_curr_max = i_cand_max;
-									  }
-								  } else {
-									  i_prev_max = i_curr_max;
+							  prev_aoi = aoi;
+							  aoi = l1_val >= th_val ? 1 : 0;
+
+							  if (aoi - prev_aoi == 1) {
+								  i_onset = i_h;
+							  } else if (aoi - prev_aoi == -1) {
+								  i_offset = i_h;
+								  i_cand_max = max_index(h, i_onset, i_offset);
+
+								  if (i_curr_max == 0) {
 									  i_curr_max = i_cand_max;
-									  rr = i_curr_max - i_prev_max;
-									  bpm = 60.0 * FS / (float) rr;
+								  } else {
+									  if (i_cand_max - i_curr_max < MIN_RR_DIST) {
+										  if (h[i_cand_max] > h[i_curr_max]) {
+											  i_curr_max = i_cand_max;
+										  }
+									  } else {
+										  r_peak_detected_flag = 1;
+										  i_prev_max = i_curr_max;
+										  i_curr_max = i_cand_max;
+										  rr = i_curr_max - i_prev_max;
+										  bpm = 60.0 * FS / (float) rr;
+									  }
 								  }
 							  }
 						  }
 					  }
+				  }
+				  if (r_peak_detected_flag) {
+					  r_peak_detected_flag = 0;
+
+					  HAL_GPIO_WritePin(Green_Led_GPIO_Port, Green_Led_Pin, GPIO_PIN_SET);
+					  led_counter++;
+
+					  npf_snprintf(msg, 20, "%hi,%hu\r\n", h_hat_val, rounded(bpm));
+					  huart2.Instance->CR3 |= USART_CR3_DMAT;
+					  HAL_DMA_Start_IT(&hdma_usart2_tx, (uint32_t)msg, (uint32_t)&huart2.Instance->TDR, strlen(msg));
+				  } else {
+					  npf_snprintf(msg, 20, "%hi\r\n", h_hat_val);
+					  huart2.Instance->CR3 |= USART_CR3_DMAT;
+					  HAL_DMA_Start_IT(&hdma_usart2_tx, (uint32_t)msg, (uint32_t)&huart2.Instance->TDR, strlen(msg));
 				  }
 			  }
 		  }
@@ -491,6 +526,7 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOF_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
+  __HAL_RCC_GPIOD_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
@@ -508,6 +544,12 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(Green_Led_GPIO_Port, &GPIO_InitStruct);
+
+  /*Configure GPIO pin : AD8232_LOD_Pin */
+  GPIO_InitStruct.Pin = AD8232_LOD_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(AD8232_LOD_GPIO_Port, &GPIO_InitStruct);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */
@@ -551,7 +593,7 @@ void DMATransferComplete(DMA_HandleTypeDef *hdma) {
 
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	if (htim->Instance == TIM6) {
-		elapsed_fs = 1;
+		fs_elapsed_flag = 1;
 	}
 }
 /* USER CODE END 4 */
