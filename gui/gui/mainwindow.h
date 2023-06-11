@@ -2,20 +2,35 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-
-QT_BEGIN_NAMESPACE
-namespace Ui { class MainWindow; }
-QT_END_NAMESPACE
+#include "qcustomplot.h"
+#include "serialportreader.h"
 
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
 
 public:
-    MainWindow(QWidget *parent = nullptr);
+    explicit MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
+private slots:
+    void addECGData(int data);
+    void addHeartRateData(unsigned int data);
+
 private:
-    Ui::MainWindow *ui;
+    QCustomPlot *ecgPlot;
+    QCustomPlot *heartRatePlot;
+
+    QVector<double> ecgData;
+    QVector<double> heartRateData;
+
+    QVector<double> ecgTime;
+    QVector<double> heartRateTime;
+
+    double startTime;
+    double firstHeartRateTime;
+
+    SerialPortReader *serialReader;
 };
+
 #endif // MAINWINDOW_H

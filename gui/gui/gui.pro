@@ -1,4 +1,4 @@
-QT       += core gui
+QT       += core gui serialport
 QMAKE_CXXFLAGS += -Wa,-mbig-obj
 
 greaterThan(QT_MAJOR_VERSION, 4): QT += widgets printsupport
@@ -12,11 +12,13 @@ CONFIG += c++17
 SOURCES += \
     main.cpp \
     mainwindow.cpp \
-    qcustomplot.cpp
+    qcustomplot.cpp \
+    serialportreader.cpp
 
 HEADERS += \
     mainwindow.h \
-    qcustomplot.h
+    qcustomplot.h \
+    serialportreader.h
 
 FORMS += \
     mainwindow.ui
