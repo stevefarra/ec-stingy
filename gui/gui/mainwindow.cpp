@@ -18,10 +18,14 @@ MainWindow::MainWindow(QWidget *parent) :
     setCentralWidget(mainWidget);
 
     ecgPlot->addGraph();
+    ecgPlot->plotLayout()->insertRow(0); // Adds an empty row above the default axis rect
+    ecgPlot->plotLayout()->addElement(0, 0, new QCPTextElement(ecgPlot, "ECG", QFont("sans", 12, QFont::Bold)));
     ecgPlot->xAxis->setRange(0, 10);
     ecgPlot->yAxis->setRange(-500, 500);
 
     heartRatePlot->addGraph();
+    heartRatePlot->plotLayout()->insertRow(0); // Adds an empty row above the default axis rect
+    heartRatePlot->plotLayout()->addElement(0, 0, new QCPTextElement(heartRatePlot, "Heart rate (bpm)", QFont("sans", 12, QFont::Bold)));
     heartRatePlot->xAxis->setRange(0, 10);
     heartRatePlot->yAxis->rescale();
 
@@ -59,7 +63,6 @@ void MainWindow::addECGData(int data)
     ecgPlot->replot();
 }
 
-
 void MainWindow::addHeartRateData(unsigned int data)
 {
     double key = QDateTime::currentDateTime().toMSecsSinceEpoch() / 1000.0 - startTime;
@@ -68,13 +71,11 @@ void MainWindow::addHeartRateData(unsigned int data)
     heartRateTime.append(key);
 
     heartRatePlot->graph(0)->setData(heartRateTime, heartRateData);
-
-    // Auto-adjust both the x-axis and the y-axis
     heartRatePlot->xAxis->rescale();
     heartRatePlot->yAxis->rescale();
-
     heartRatePlot->replot();
 }
+
 
 
 
