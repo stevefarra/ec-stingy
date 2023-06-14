@@ -2,7 +2,7 @@
 data = csvread('output.csv');
 
 % Extract columns into variables
-x = data(:,1);
+ecg = data(:,1);
 y = data(:,2);
 t = data(:,3);
 l = data(:,4);
@@ -14,18 +14,18 @@ figure
 
 % Subplot for ECG signal
 subplot(4,1,1);
-plot(x);
-title('ECG signal (x)');
+plot(ecg);
+title('ECG signal');
 
 % Subplot for output of highpass filter
 subplot(4,1,2);
 plot(y);
-title('Output of highpass filter (y)');
+title('Output of highpass filter');
 
 % Subplot for output of triangle filter
 subplot(4,1,3);
 plot(t);
-title('Output of triangle filter (t)');
+title('Output of triangle filter');
 
 % Subplot for output of lowpass filter, threshold, and areas of interest
 subplot(4,1,4);
@@ -34,5 +34,5 @@ plot(l);
 plot(th);
 plot(aoi,'k');
 hold off;
-legend('Lowpass Filter (l)', 'Threshold (th)', 'Areas of Interest (aoi)');
-title('Outputs overlayed (l, th, aoi)');
+legend('Lowpass Filter', 'Threshold', 'Areas of Interest');
+title('Outputs overlayed');

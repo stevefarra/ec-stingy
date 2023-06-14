@@ -43,6 +43,7 @@
 
 #define X_SIZE (WINDOW(N) + 1)
 #define H_SIZE (FS * 2)
+#define NOTCH_SIZE 3
 #define T_SIZE (WINDOW(L) + 1)
 #define L1_SIZE (WINDOW(M) + 1)
 
@@ -64,6 +65,9 @@ UART_HandleTypeDef huart2;
 DMA_HandleTypeDef hdma_usart2_tx;
 
 /* USER CODE BEGIN PV */
+static float B[] = {0.9576, -0.9864, 0.9576};
+static float A[] = {1, -0.9864, 0.9153};
+
 uint8_t fs_elapsed_flag = 0;
 uint8_t r_peak_detected_flag = 0;
 /* USER CODE END PV */
@@ -94,10 +98,12 @@ void DMATransferComplete(DMA_HandleTypeDef *hdma);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
-	char msg[40];
+	char msg[20];
 
 	uint16_t x[X_SIZE];
 	uint16_t h[H_SIZE];
+	float h_hat[NOTCH_SIZE];
+	float ecg[NOTCH_SIZE];
 	float t[T_SIZE];
 	float l1[L1_SIZE];
 
@@ -105,6 +111,7 @@ int main(void)
 	float x_bar_val = 0;
 	short h_hat_val = 0;
 	uint16_t h_val = 0;
+	float ecg_val;
 	float t_val1, t_val2;
 	float t_val = 0;
 	float l1_val = 0;
@@ -113,7 +120,10 @@ int main(void)
 	float theta;
 
 	uint16_t i;
+	uint16_t j;
 	uint16_t i_x = 0;
+	uint16_t i_h_hat = 0;
+	uint16_t i_ecg = 0;
 	uint16_t i_h = 0;
 	uint16_t i_t = 0;
 	uint16_t i_l1 = 0;
@@ -198,16 +208,40 @@ int main(void)
 				  }
 				  i_x--;
 			  }
-			  x[i_x] = x_val;
-			  i_x++;
+			  x[i_x++] = x_val;
 
 			  x_bar_val += (float) x_val / WINDOW(N);
 			  if (i_x > WINDOW(N)) {
 				  x_bar_val -= (float) x[0] / WINDOW(N);
 
 				  h_hat_val = x_val - x_bar_val;
-				  h_val = ABS(h_hat_val);
+				  if (i_h_hat == NOTCH_SIZE) {
+					  for (i = 0; i < NOTCH_SIZE - 1; i++) {
+						  h_hat[i] = h_hat[i + 1];
+					  }
+				      i_h_hat--;
+				  }
+				  h_hat[i_h_hat++] = h_hat_val;
 
+				  ecg_val = 0;
+				  j = i_h_hat - 1;
+				  for (i = 0; i <= j; i++) {
+					  ecg_val += B[i] * h_hat[j - i];
+				  }
+				  if (j >= 1) {
+					  for (i = 1; i <= j; i++) {
+						  ecg_val -= A[i] * ecg[i_ecg - i];
+					  }
+				  }
+				  if (i_ecg == NOTCH_SIZE) {
+					  for (i = 0; i < NOTCH_SIZE - 1; i++) {
+						  ecg[i] = ecg[i + 1];
+					  }
+				      i_ecg--;
+				  }
+				  ecg[i_ecg++] = ecg_val;
+
+				  h_val = ABS(h_hat_val);
 				  if (i_h == H_SIZE) {
 					  for (i = 0; i < H_SIZE - 1; i++) {
 						  h[i] = h[i + 1];
@@ -217,12 +251,12 @@ int main(void)
 					  i_curr_max--;
 					  i_prev_max--;
 				  }
-				  h[i_h] = h_val;
-				  i_h++;
+				  h[i_h++] = h_val;
 
 				  if (i_h >= WINDOW(S)) {
-					  t_val1 = h[(i_h - 1) - S] - h[(i_h - 1) - (2 * S)];
-					  t_val2 = h[(i_h - 1) - S] - h[i_h - 1];
+					  j = i_h - 1;
+					  t_val1 = h[j - S] - h[j - (2 * S)];
+					  t_val2 = h[j - S] - h[j];
 					  t_val = t_val1 * t_val2;
 
 					  if (i_t == T_SIZE) {
@@ -231,8 +265,7 @@ int main(void)
 						  }
 						  i_t--;
 					  }
-					  t[i_t] = t_val;
-					  i_t++;
+					  t[i_t++] = t_val;
 
 					  l1_val += t_val / WINDOW(L);
 					  if (i_t > WINDOW(L)) {
@@ -244,8 +277,7 @@ int main(void)
 							  }
 							  i_l1--;
 						  }
-						  l1[i_l1] = l1_val;
-						  i_l1++;
+						  l1[i_l1++] = l1_val;
 
 						  l2_val += l1_val / WINDOW(M);
 						  if (i_l1 > WINDOW(M)) {
@@ -290,11 +322,11 @@ int main(void)
 					  HAL_GPIO_WritePin(Green_Led_GPIO_Port, Green_Led_Pin, GPIO_PIN_SET);
 					  led_counter++;
 
-					  npf_snprintf(msg, 20, "%hi,%hu\r\n", h_hat_val, rounded(bpm));
+					  npf_snprintf(msg, 20, "%hi,%hu\r\n", (short) ecg_val, rounded(bpm));
 					  huart2.Instance->CR3 |= USART_CR3_DMAT;
 					  HAL_DMA_Start_IT(&hdma_usart2_tx, (uint32_t)msg, (uint32_t)&huart2.Instance->TDR, strlen(msg));
 				  } else {
-					  npf_snprintf(msg, 20, "%hi\r\n", h_hat_val);
+					  npf_snprintf(msg, 20, "%hi\r\n", (short) ecg_val);
 					  huart2.Instance->CR3 |= USART_CR3_DMAT;
 					  HAL_DMA_Start_IT(&hdma_usart2_tx, (uint32_t)msg, (uint32_t)&huart2.Instance->TDR, strlen(msg));
 				  }

@@ -211,8 +211,7 @@ int main() {
                 }
             }
         }
-        // fprintf(output_file, "%i,%i,%f,%f,%f,%i\n", x_val, h_val, t_val, l1_val, th_val, aoi);
-        fprintf(output_file, "%i,%i\n", x_val, (int) ecg_val);
+        fprintf(output_file, "%i,%i,%f,%f,%f,%i\n", (short) ecg_val, h_val, t_val, l1_val, th_val, aoi);
     }
     fclose(input_file);
     fclose(output_file);
