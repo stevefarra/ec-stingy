@@ -5,6 +5,7 @@ MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
     ecgPlot(new QCustomPlot(this)),
     heartRatePlot(new QCustomPlot(this)),
+    heartRateLabel(new QCPItemText(heartRatePlot)),
     startTime(QDateTime::currentDateTime().toMSecsSinceEpoch() / 1000.0),
     serialReader(new SerialPortReader(this))
 {
@@ -26,8 +27,12 @@ MainWindow::MainWindow(QWidget *parent) :
     heartRatePlot->addGraph();
     heartRatePlot->plotLayout()->insertRow(0); // Adds an empty row above the default axis rect
     heartRatePlot->plotLayout()->addElement(0, 0, new QCPTextElement(heartRatePlot, "Heart rate (bpm)", QFont("sans", 12, QFont::Bold)));
+    heartRatePlot->graph(0)->setLineStyle(QCPGraph::lsLine);
+    heartRatePlot->graph(0)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc, 5));
     heartRatePlot->xAxis->setRange(0, 10);
     heartRatePlot->yAxis->rescale();
+
+    heartRatePlot->replot();
 
     connect(serialReader, &SerialPortReader::newECGData, this, &MainWindow::addECGData);
     connect(serialReader, &SerialPortReader::newHeartRateData, this, &MainWindow::addHeartRateData);
@@ -71,10 +76,25 @@ void MainWindow::addHeartRateData(unsigned int data)
     heartRateTime.append(key);
 
     heartRatePlot->graph(0)->setData(heartRateTime, heartRateData);
-    heartRatePlot->xAxis->rescale();
-    heartRatePlot->yAxis->rescale();
+
+    // Adjust both axes with a margin
+    heartRatePlot->xAxis->setRange(*std::min_element(heartRateTime.constBegin(), heartRateTime.constEnd()),
+                                   *std::max_element(heartRateTime.constBegin(), heartRateTime.constEnd()) + 1);
+    heartRatePlot->yAxis->setRange(*std::min_element(heartRateData.constBegin(), heartRateData.constEnd()) - 1,
+                                   *std::max_element(heartRateData.constBegin(), heartRateData.constEnd()) + 2);
+
+    heartRateLabel->position->setType(QCPItemPosition::ptPlotCoords);
+    heartRateLabel->position->setCoords(key, data);
+    heartRateLabel->setText(QString::number(data));
+    heartRateLabel->setFont(QFont(font().family(), 12));
+    heartRateLabel->setColor(Qt::blue);
+    heartRateLabel->setPadding(QMargins(1, 1, 1, 1));
+    heartRateLabel->setPositionAlignment(Qt::AlignHCenter|Qt::AlignBottom);
+    heartRateLabel->position->setPixelPosition(heartRateLabel->position->pixelPosition() + QPoint(0, -10));
+
     heartRatePlot->replot();
 }
+
 
 
 

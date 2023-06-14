@@ -22,8 +22,13 @@
 /* Buffer parameters */
 #define X_SIZE (WINDOW(N) + 1)
 #define H_SIZE (FS * 2)
+#define H_HAT_SIZE 3
+#define ECG_SIZE 3
 #define T_SIZE (WINDOW(L) + 1)
 #define L1_SIZE (WINDOW(M) + 1)
+
+static float B[] = {0.9175, -0.9451, 0.9175};
+static float A[] = {1, -0.9451, 0.8350};
 
 unsigned short max_index(unsigned short arr[],
                          unsigned short start_idx,
@@ -58,12 +63,16 @@ int main() {
     // Signal buffers
     unsigned short x[X_SIZE];
     unsigned short h[H_SIZE];
+    float h_hat[H_HAT_SIZE];
+    float ecg[ECG_SIZE];
     float t[T_SIZE];
     float l1[L1_SIZE];
 
     unsigned short x_val = 0;
     float x_bar_val = 0;
+    short h_hat_val = 0;
     unsigned short h_val = 0;
+    float ecg_val;
     float t_val = 0;
     float l1_val = 0;
     float l2_val = 0;
@@ -73,6 +82,8 @@ int main() {
     unsigned short i;
     unsigned short i_x = 0;
     unsigned short i_h = 0;
+    unsigned short i_h_hat = 0;
+    unsigned short i_ecg = 0;
     unsigned short i_t = 0;
     unsigned short i_l1 = 0;
 
@@ -86,7 +97,7 @@ int main() {
     unsigned short i_prev_max;
 
     float rr;
-    float bpm;
+    float bpm = 0;
 
     // Read data from file and store in buffer, then write to output file
     while (fscanf(input_file, "%i,%*s", &x_val) != EOF) {
@@ -96,14 +107,39 @@ int main() {
             }
             i_x--;
         }
-        x[i_x] = x_val;
-        i_x++;
+        x[i_x++] = x_val;
 
         x_bar_val += (float) x_val / WINDOW(N);
         if (i_x > WINDOW(N)) {
             x_bar_val -= (float) x[0] / WINDOW(N);
-            h_val = ABS(x_val - x_bar_val);
 
+            h_hat_val = x_val - x_bar_val;
+            if (i_h_hat == H_HAT_SIZE) {
+                for (i = 0; i < H_HAT_SIZE - 1; i++) {
+                    h_hat[i] = h_hat[i + 1];
+                }
+                i_h_hat--;
+            }
+            h_hat[i_h_hat++] = h_hat_val;
+
+            ecg_val = 0;
+            for (i = 0; i < i_h_hat; i++) {
+                ecg_val += B[i] * h_hat[(i_h_hat - 1) - i];
+            }
+            if (i_h_hat > 1) {
+                for (i = 1; i < i_h_hat; i++) {
+                    ecg_val -= A[i] * ecg[i_ecg - i];
+                }
+            }
+            if (i_ecg == ECG_SIZE) {
+                for (i = 0; i < ECG_SIZE - 1; i++) {
+                    ecg[i] = ecg[i + 1];
+                }
+                i_ecg--;
+            }
+            ecg[i_ecg++] = ecg_val;
+
+            h_val = ABS(h_hat_val);
             if (i_h == H_SIZE) {
                 for (i = 0; i < H_SIZE - 1; i++) {
                     h[i] = h[i + 1];
@@ -113,8 +149,7 @@ int main() {
                 i_curr_max--;
                 i_prev_max--;
             }
-            h[i_h] = h_val;
-            i_h++;
+            h[i_h++] = h_val;
 
             if (i_h >= WINDOW(S)) {
                 t_val = (h[(i_h - 1) - S] - h[(i_h - 1) - (2 * S)]) * (h[(i_h - 1) - S] - h[i_h - 1]);
@@ -125,8 +160,7 @@ int main() {
                     }
                     i_t--;
                 }
-                t[i_t] = t_val;
-                i_t++;
+                t[i_t++] = t_val;
 
                 l1_val += t_val / WINDOW(L);
                 if (i_t > WINDOW(L)) {
@@ -138,8 +172,7 @@ int main() {
                         }
                         i_l1--;
                     }
-                    l1[i_l1] = l1_val;
-                    i_l1++;
+                    l1[i_l1++] = l1_val;
 
                     l2_val += l1_val / WINDOW(M);
                     if (i_l1 > WINDOW(M)) {
@@ -169,7 +202,7 @@ int main() {
                                     i_prev_max = i_curr_max;
                                     i_curr_max = i_cand_max;
                                     rr = i_curr_max - i_prev_max;
-                                    bpm = 60.0 * FS / rr;
+                                    bpm = 60.0 * FS / (float) rr;
                                     printf("%f\n", bpm);
                                 }
                             }
@@ -178,7 +211,8 @@ int main() {
                 }
             }
         }
-        fprintf(output_file, "%i,%i,%f,%f,%f,%i,%f\n", x_val, h_val, t_val, l1_val, th_val, aoi);
+        // fprintf(output_file, "%i,%i,%f,%f,%f,%i\n", x_val, h_val, t_val, l1_val, th_val, aoi);
+        fprintf(output_file, "%i,%i\n", x_val, (int) ecg_val);
     }
     fclose(input_file);
     fclose(output_file);

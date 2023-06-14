@@ -21,6 +21,8 @@ private:
     QCustomPlot *ecgPlot;
     QCustomPlot *heartRatePlot;
 
+    QCPItemText *heartRateLabel;
+
     QVector<double> ecgData;
     QVector<double> heartRateData;
 
