@@ -17,7 +17,7 @@
 #define L           5   // Moving average window size for Low-pass filter
 #define M           150 // Moving average window size for dynamic threshold calculation
 #define BETA        2.5 // Dynamic threshold coefficient
-#define MIN_RR_DIST (0.272 * FS)
+#define MIN_RR_DIST (0.272 * FS) // Minimum distance between two RR peaks in seconds
 
 /* Buffer parameters */
 #define X_SIZE (WINDOW(N) + 1)
@@ -27,6 +27,7 @@
 #define T_SIZE (WINDOW(L) + 1)
 #define L1_SIZE (WINDOW(M) + 1)
 
+/* Notch filter coefficients */
 static float B[] = {0.9175, -0.9451, 0.9175};
 static float A[] = {1, -0.9451, 0.8350};
 
@@ -68,6 +69,7 @@ int main() {
     float t[T_SIZE];
     float l1[L1_SIZE];
 
+    // Signal values
     unsigned short x_val = 0;
     float x_bar_val = 0;
     short h_hat_val = 0;
@@ -79,6 +81,7 @@ int main() {
     float th_val = 0;
     float theta;
 
+    // Buffer indices
     unsigned short i;
     unsigned short i_x = 0;
     unsigned short i_h = 0;
@@ -87,17 +90,19 @@ int main() {
     unsigned short i_t = 0;
     unsigned short i_l1 = 0;
 
+    // Area of interest flags
     unsigned char prev_aoi;
     unsigned char aoi = 0;
     
+    // Peak detection indices
     unsigned short i_onset;
     unsigned short i_offset;
     unsigned short i_cand_max;
     unsigned short i_curr_max = 0;
     unsigned short i_prev_max;
 
-    float rr;
-    float bpm = 0;
+    float rr; // Distance (in samples) between most recent two RR peaks
+    float bpm = 0; // beats per minute reading
 
     // Read data from file and store in buffer, then write to output file
     while (fscanf(input_file, "%i,%*s", &x_val) != EOF) {
