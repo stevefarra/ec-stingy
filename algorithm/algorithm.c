@@ -20,16 +20,14 @@
 #define MIN_RR_DIST (0.272 * FS) // Minimum distance between two RR peaks in seconds
 
 /* Buffer parameters */
-#define X_SIZE (WINDOW(N) + 1)
+#define NOTCHED_SIZE (WINDOW(N) + 1)
 #define H_SIZE (FS * 2)
-#define H_HAT_SIZE 3
-#define ECG_SIZE 3
 #define T_SIZE (WINDOW(L) + 1)
 #define L1_SIZE (WINDOW(M) + 1)
 
 /* Notch filter coefficients */
 static float B[] = {0.9175, -0.9451, 0.9175};
-static float A[] = {1, -0.9451, 0.8350};
+static float A[] = {0, -0.9451, 0.8350};
 
 unsigned short max_index(unsigned short arr[],
                          unsigned short start_idx,
@@ -62,19 +60,24 @@ int main() {
     FILE *output_file = fopen(OUTPUT_FILE, "w");
 
     // Signal buffers
-    unsigned short x[X_SIZE];
+    unsigned short x[3];
+    float y[3];
+    unsigned short notched[NOTCHED_SIZE];
     unsigned short h[H_SIZE];
-    float h_hat[H_HAT_SIZE];
-    float ecg[ECG_SIZE];
     float t[T_SIZE];
     float l1[L1_SIZE];
 
+    // Buffer initializations
+    memset(x, 0, sizeof(x));
+    memset(y, 0, sizeof(y));
+
     // Signal values
-    unsigned short x_val = 0;
-    float x_bar_val = 0;
+    unsigned short input;
+    float y_val;
+    unsigned short notched_val;
+    float notched_bar_val = 0;
     short h_hat_val = 0;
     unsigned short h_val = 0;
-    float ecg_val;
     float t_val = 0;
     float l1_val = 0;
     float l2_val = 0;
@@ -83,7 +86,8 @@ int main() {
 
     // Buffer indices
     unsigned short i;
-    unsigned short i_x = 0;
+    unsigned short j;
+    unsigned short i_notched = 0;
     unsigned short i_h = 0;
     unsigned short i_h_hat = 0;
     unsigned short i_ecg = 0;
@@ -103,46 +107,37 @@ int main() {
 
     float rr; // Distance (in samples) between most recent two RR peaks
     float bpm = 0; // beats per minute reading
-
+    
     // Read data from file and store in buffer, then write to output file
-    while (fscanf(input_file, "%i,%*s", &x_val) != EOF) {
-        if (i_x == X_SIZE) {
-            for (i = 0; i < X_SIZE - 1; i++) {
-                x[i] = x[i + 1];
-            }
-            i_x--;
+    while (fscanf(input_file, "%i,%*s", &input) != EOF) {
+
+        for (i = 0; i < 2; i++) {
+            x[i] = x[i + 1];
+            y[i] = y[i + 1];
         }
-        x[i_x++] = x_val;
+        x[2] = input;
+    
+        y_val = 0;
+        for (i = 0; i < 3; i++) {
+            y_val += B[i] * x[2 - i];
+            y_val -= A[i] * y[2 - i];
+        }
+        y[2] = y_val;
 
-        x_bar_val += (float) x_val / WINDOW(N);
-        if (i_x > WINDOW(N)) {
-            x_bar_val -= (float) x[0] / WINDOW(N);
+        notched_val = (unsigned short) y_val;
+        if (i_notched == NOTCHED_SIZE) {
+            for (i = 0; i < NOTCHED_SIZE - 1; i++) {
+                notched[i] = notched[i + 1];
+            }
+            i_notched--;
+        }
+        notched[i_notched++] = notched_val;
 
-            h_hat_val = x_val - x_bar_val;
-            if (i_h_hat == H_HAT_SIZE) {
-                for (i = 0; i < H_HAT_SIZE - 1; i++) {
-                    h_hat[i] = h_hat[i + 1];
-                }
-                i_h_hat--;
-            }
-            h_hat[i_h_hat++] = h_hat_val;
+        notched_bar_val += (float) notched_val / WINDOW(N);
+        if (i_notched > WINDOW(N)) {
+            notched_bar_val -= (float) x[0] / WINDOW(N);
 
-            ecg_val = 0;
-            for (i = 0; i < i_h_hat; i++) {
-                ecg_val += B[i] * h_hat[(i_h_hat - 1) - i];
-            }
-            if (i_h_hat > 1) {
-                for (i = 1; i < i_h_hat; i++) {
-                    ecg_val -= A[i] * ecg[i_ecg - i];
-                }
-            }
-            if (i_ecg == ECG_SIZE) {
-                for (i = 0; i < ECG_SIZE - 1; i++) {
-                    ecg[i] = ecg[i + 1];
-                }
-                i_ecg--;
-            }
-            ecg[i_ecg++] = ecg_val;
+            h_hat_val = notched_val - notched_bar_val;
 
             h_val = ABS(h_hat_val);
             if (i_h == H_SIZE) {
@@ -157,7 +152,8 @@ int main() {
             h[i_h++] = h_val;
 
             if (i_h >= WINDOW(S)) {
-                t_val = (h[(i_h - 1) - S] - h[(i_h - 1) - (2 * S)]) * (h[(i_h - 1) - S] - h[i_h - 1]);
+                j = i_h - 1;
+                t_val = (h[j - S] - h[j - (2 * S)]) * (h[j - S] - h[j]);
 
                 if (i_t == T_SIZE) {
                     for (i = 0; i < T_SIZE - 1; i++) {
@@ -208,7 +204,7 @@ int main() {
                                     i_curr_max = i_cand_max;
                                     rr = i_curr_max - i_prev_max;
                                     bpm = 60.0 * FS / (float) rr;
-                                    printf("%f\n", bpm);
+                                    printf("bpm: %f\n", bpm);
                                 }
                             }
                         }           
@@ -216,7 +212,7 @@ int main() {
                 }
             }
         }
-        fprintf(output_file, "%i,%i,%f,%f,%f,%i\n", (short) ecg_val, h_val, t_val, l1_val, th_val, aoi);
+        fprintf(output_file, "%i,%i,%f,%f,%f,%i\n", notched_val, h_val, t_val, l1_val, th_val, aoi);
     }
     fclose(input_file);
     fclose(output_file);

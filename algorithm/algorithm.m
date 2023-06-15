@@ -36,8 +36,8 @@ notch_bandwidth_normalized = notch_bandwidth / (Fs/2);
 notched = filter(b, a, x);
 
 % High-pass filter
-x_bar = movmean(x, window(N));
-h_hat = x - x_bar;
+notched_bar = movmean(notched, window(N));
+h_hat = notched - notched_bar;
 h = abs(h_hat);
 
 % Triangle template matching filter
