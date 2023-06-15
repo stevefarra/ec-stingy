@@ -3929,8 +3929,8 @@ int main(void)
  80021d2:	f8b7 3b5c 	ldrh.w	r3, [r7, #2908]	; 0xb5c
  80021d6:	2b33      	cmp	r3, #51	; 0x33
  80021d8:	f67f aec3 	bls.w	8001f62 <main+0xc2>
-				  notched_bar_val -= (float) x[0] / WINDOW(N);
- 80021dc:	f8b7 3b00 	ldrh.w	r3, [r7, #2816]	; 0xb00
+				  notched_bar_val -= (float) notched[0] / WINDOW(N);
+ 80021dc:	f8b7 3a8c 	ldrh.w	r3, [r7, #2700]	; 0xa8c
  80021e0:	ee07 3a90 	vmov	s15, r3
  80021e4:	eeb8 7a67 	vcvt.f32.u32	s14, s15
  80021e8:	eddf 6a1f 	vldr	s13, [pc, #124]	; 8002268 <main+0x3c8>
