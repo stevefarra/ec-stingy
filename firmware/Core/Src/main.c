@@ -41,9 +41,8 @@
 #define M 150
 #define BETA 2.5
 
-#define X_SIZE (WINDOW(N) + 1)
+#define NOTCHED_SIZE (WINDOW(N) + 1)
 #define H_SIZE (FS * 2)
-#define NOTCH_SIZE 3
 #define T_SIZE (WINDOW(L) + 1)
 #define L1_SIZE (WINDOW(M) + 1)
 
@@ -66,7 +65,7 @@ DMA_HandleTypeDef hdma_usart2_tx;
 
 /* USER CODE BEGIN PV */
 static float B[] = {0.9576, -0.9864, 0.9576};
-static float A[] = {1, -0.9864, 0.9153};
+static float A[] = {0, -0.9864, 0.9153};
 
 uint8_t fs_elapsed_flag = 0;
 uint8_t r_peak_detected_flag = 0;
@@ -100,18 +99,22 @@ int main(void)
   /* USER CODE BEGIN 1 */
 	char msg[20];
 
-	uint16_t x[X_SIZE];
+	uint16_t x[3];
+	float y[3];
+	uint16_t notched[NOTCHED_SIZE];
 	uint16_t h[H_SIZE];
-	float h_hat[NOTCH_SIZE];
-	float ecg[NOTCH_SIZE];
 	float t[T_SIZE];
 	float l1[L1_SIZE];
 
-	uint16_t x_val = 0;
-	float x_bar_val = 0;
+	memset(x, 0, sizeof(x));
+	memset(y, 0, sizeof(y));
+
+	uint16_t input;
+	float y_val;
+	uint16_t notched_val;
+	float notched_bar_val = 0;
 	short h_hat_val = 0;
 	uint16_t h_val = 0;
-	float ecg_val;
 	float t_val1, t_val2;
 	float t_val = 0;
 	float l1_val = 0;
@@ -121,9 +124,7 @@ int main(void)
 
 	uint16_t i;
 	uint16_t j;
-	uint16_t i_x = 0;
-	uint16_t i_h_hat = 0;
-	uint16_t i_ecg = 0;
+	uint16_t i_notched = 0;
 	uint16_t i_h = 0;
 	uint16_t i_t = 0;
 	uint16_t i_l1 = 0;
@@ -187,10 +188,10 @@ int main(void)
 		  }
 
 		  if (HAL_GPIO_ReadPin(AD8232_LOD_GPIO_Port, AD8232_LOD_Pin) == GPIO_PIN_SET) {
-			  x_bar_val = 0;
+			  notched_bar_val = 0;
 			  l1_val = 0;
 			  l2_val = 0;
-			  i_x = 0;
+			  i_notched = 0;
 			  i_h = 0;
 			  i_t = 0;
 			  i_l1 = 0;
@@ -200,48 +201,38 @@ int main(void)
 		  } else {
 			  HAL_ADC_Start(&hadc1);
 			  HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
-			  x_val = HAL_ADC_GetValue(&hadc1);
+			  input = HAL_ADC_GetValue(&hadc1);
 
-			  if (i_x == X_SIZE) {
-				  for (i = 0; i < X_SIZE -1; i++) {
-					  x[i] = x[i + 1];
-				  }
-				  i_x--;
+			  for (i = 0; i < 2; i++) {
+				  x[i] = x[i + 1];
+				  y[i] = y[i + 1];
 			  }
-			  x[i_x++] = x_val;
+			  x[2] = input;
 
-			  x_bar_val += (float) x_val / WINDOW(N);
-			  if (i_x > WINDOW(N)) {
-				  x_bar_val -= (float) x[0] / WINDOW(N);
+			  y_val = 0;
+			  for (i = 0; i < 3; i++) {
+				  y_val += B[i] * x[2 - i];
+				  y_val -= A[i] * y[2 - i];
+			  }
+			  y[2] = y_val;
 
-				  h_hat_val = x_val - x_bar_val;
-				  if (i_h_hat == NOTCH_SIZE) {
-					  for (i = 0; i < NOTCH_SIZE - 1; i++) {
-						  h_hat[i] = h_hat[i + 1];
-					  }
-				      i_h_hat--;
+			  notched_val = (uint16_t) y_val;
+			  if (i_notched == NOTCHED_SIZE) {
+				  for (i = 0; i < NOTCHED_SIZE - 1; i++) {
+					  notched[i] = notched[i + 1];
 				  }
-				  h_hat[i_h_hat++] = h_hat_val;
+				  i_notched--;
+			  }
+			  notched[i_notched++] = notched_val;
 
-				  ecg_val = 0;
-				  j = i_h_hat - 1;
-				  for (i = 0; i <= j; i++) {
-					  ecg_val += B[i] * h_hat[j - i];
-				  }
-				  if (j >= 1) {
-					  for (i = 1; i <= j; i++) {
-						  ecg_val -= A[i] * ecg[i_ecg - i];
-					  }
-				  }
-				  if (i_ecg == NOTCH_SIZE) {
-					  for (i = 0; i < NOTCH_SIZE - 1; i++) {
-						  ecg[i] = ecg[i + 1];
-					  }
-				      i_ecg--;
-				  }
-				  ecg[i_ecg++] = ecg_val;
+			  notched_bar_val += (float) notched_val / WINDOW(N);
+			  if (i_notched > WINDOW(N)) {
+				  notched_bar_val -= (float) x[0] / WINDOW(N);
+
+				  h_hat_val = notched_val - notched_bar_val;
 
 				  h_val = ABS(h_hat_val);
+
 				  if (i_h == H_SIZE) {
 					  for (i = 0; i < H_SIZE - 1; i++) {
 						  h[i] = h[i + 1];
@@ -322,11 +313,11 @@ int main(void)
 					  HAL_GPIO_WritePin(Green_Led_GPIO_Port, Green_Led_Pin, GPIO_PIN_SET);
 					  led_counter++;
 
-					  npf_snprintf(msg, 20, "%hi,%hu\r\n", (short) ecg_val, rounded(bpm));
+					  npf_snprintf(msg, 20, "%hi,%hu\r\n", h_hat_val, rounded(bpm));
 					  huart2.Instance->CR3 |= USART_CR3_DMAT;
 					  HAL_DMA_Start_IT(&hdma_usart2_tx, (uint32_t)msg, (uint32_t)&huart2.Instance->TDR, strlen(msg));
 				  } else {
-					  npf_snprintf(msg, 20, "%hi\r\n", (short) ecg_val);
+					  npf_snprintf(msg, 20, "%hi\r\n", h_hat_val);
 					  huart2.Instance->CR3 |= USART_CR3_DMAT;
 					  HAL_DMA_Start_IT(&hdma_usart2_tx, (uint32_t)msg, (uint32_t)&huart2.Instance->TDR, strlen(msg));
 				  }

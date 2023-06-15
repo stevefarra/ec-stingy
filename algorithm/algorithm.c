@@ -74,7 +74,7 @@ int main() {
     // Signal values
     unsigned short input;
     float y_val;
-    unsigned short notched_val;
+    unsigned short notched_val = 0;
     float notched_bar_val = 0;
     short h_hat_val = 0;
     unsigned short h_val = 0;
@@ -212,7 +212,7 @@ int main() {
                 }
             }
         }
-        fprintf(output_file, "%i,%i,%f,%f,%f,%i\n", notched_val, h_val, t_val, l1_val, th_val, aoi);
+        fprintf(output_file, "%i,%i,%f,%f,%f,%i\n", h_hat_val, h_val, t_val, l1_val, th_val, aoi);
     }
     fclose(input_file);
     fclose(output_file);
