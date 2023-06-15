@@ -135,7 +135,7 @@ int main() {
 
         notched_bar_val += (float) notched_val / WINDOW(N);
         if (i_notched > WINDOW(N)) {
-            notched_bar_val -= (float) x[0] / WINDOW(N);
+            notched_bar_val -= (float) notched[0] / WINDOW(N);
 
             h_hat_val = notched_val - notched_bar_val;
 

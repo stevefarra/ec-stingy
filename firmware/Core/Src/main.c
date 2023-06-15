@@ -188,6 +188,8 @@ int main(void)
 		  }
 
 		  if (HAL_GPIO_ReadPin(AD8232_LOD_GPIO_Port, AD8232_LOD_Pin) == GPIO_PIN_SET) {
+			  memset(x, 0, sizeof(x));
+			  memset(y, 0, sizeof(y));
 			  notched_bar_val = 0;
 			  l1_val = 0;
 			  l2_val = 0;

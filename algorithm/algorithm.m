@@ -41,6 +41,7 @@ h_hat = notched - notched_bar;
 h = abs(h_hat);
 
 % Triangle template matching filter
+t = zeros(length(h), 1);
 for i = s+1:length(h)-s
     t(i) = (h(i) - h(i-s)) * (h(i) - h(i+s));
 end
@@ -66,7 +67,7 @@ for i = 1:length(l)
             buffer = [];  % Reset the buffer for new peak
             flag = 1;  % Set the flag to indicate peak under consideration
         end
-        buffer = [buffer; i, y(i)];  % Append the current value to the buffer
+        buffer = [buffer; i, h(i)];  % Append the current value to the buffer
     else  % If current value is below threshold
         if flag == 1  % If a peak was under consideration
             [~, max_idx] = max(buffer(:, 2));  % Find the maximum value in the buffer
@@ -75,7 +76,7 @@ for i = 1:length(l)
             if prev_r_peak_idx ~= -1  % If there was a previously detected R-peak
                 r_peak_distance = (r_peak_idx - prev_r_peak_idx) / Fs * 1000;  % Compute the distance to the previous R-peak
                 if r_peak_distance <= MIN_RR_DIST_MS  % If the distance is too short
-                    if y(r_peak_idx) >= y(prev_r_peak_idx)  % If the current R-peak is higher than the previous one
+                    if h(r_peak_idx) >= h(prev_r_peak_idx)  % If the current R-peak is higher than the previous one
                         r_peaks(end) = [];  % Remove the last detected R-peak
                     else  % If the previous R-peak is higher
                         continue;  % Skip the current R-peak
@@ -128,9 +129,9 @@ figure(2);
 
 % Filtered ECG signal with R-peaks overlay
 subplot(3,1,1);
-plot(t_plot, y);
+plot(t_plot, h);
 hold on;
-scatter(r_peak_times, y(r_peaks), 'r', 'filled');
+scatter(r_peak_times, h(r_peaks), 'r', 'filled');
 hold off;
 xlabel('Time (s)');
 ylabel('Amplitude');
