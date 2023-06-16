@@ -1,5 +1,0 @@
-# Ignore data file
-output.csv
-
-# Ignore build files
-*.exe
