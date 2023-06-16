@@ -6,7 +6,7 @@ You and your sub-licensees are hereby licensed to design, manufacture, use and d
 
 Individual Models remain the intellectual property of SnapEDA, Inc. You shall not (and shall not permit or encourage any third party to) to do any of the following :
 
-(a) sell, assign, lease, lend, rent, issue, sublicense, make available, or otherwise distribute to any third party, or publicly perform, display or communicate, the Models (for example, by uploading Models to another website or software application); 
+(a) sell, assign, lease, lend, rent, issue, sublicense, make available, or otherwise distribute to any third party, or publicly perform, display or communicate, the Models (for example, by uploading Models to another website or software application);
 (b) remove, alter, or conceal, any copyright, trademark, or other proprietary rights notice or legend displayed or contained in the individual Models.
 
 For further clarity, once integrated into a schematic design or PCB layout, Models may be modified freely for the purpose of designing a circuit board. 
