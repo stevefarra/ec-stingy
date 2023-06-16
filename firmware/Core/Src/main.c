@@ -2,7 +2,13 @@
 /**
   ******************************************************************************
   * @file           : main.c
-  * @brief          : Main program body
+  * @brief          : Main program body. All of the user-generated code for
+  	  	  	  	  	  this STM32CubeIDE project is contained in this file,
+  	  	  	  	  	  which closely follows the program contained in the
+  	  	  	  	  	  algorithm/algorithm.c file of this repository. Comments
+  	  	  	  	  	  are provided primarily for implementation details
+  	  	  	  	  	  unique to the STM32 version; more details can be found in
+  	  	  	  	  	  the aforementioned C version.
   ******************************************************************************
   * @attention
   *
@@ -21,6 +27,10 @@
 
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+/*
+ * Used to print data to the serial buffer before it's transmitted through
+ * USART.
+ */
 #include <string.h>
 /* USER CODE END Includes */
 
@@ -31,8 +41,16 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+/*
+ * Included before the designated macro section since some pre-defined
+ * constants make use of it.
+ */
 #define WINDOW(R) (2 * (R) + 1)
 
+/*
+ * The remaining predefined constants are identical to those found in
+ * algorithm/algorithm.c.
+ */
 #define FS 360
 
 #define N 25
@@ -67,7 +85,16 @@ DMA_HandleTypeDef hdma_usart2_tx;
 static float B[] = {0.9576, -0.9864, 0.9576};
 static float A[] = {0, -0.9864, 0.9153};
 
+/*
+ * Indicates whether the sample period has elapsed. Once triggered by an
+ * interrupt, the superloop reads a sample and processes it.
+ */
 uint8_t fs_elapsed_flag = 0;
+
+/*
+ * Indicates whether a new R-peak has been detected. This triggers a bpm
+ * reading transmitted through the serial port and flickers the LED.
+ */
 uint8_t r_peak_detected_flag = 0;
 /* USER CODE END PV */
 
@@ -79,13 +106,28 @@ static void MX_USART2_UART_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_TIM6_Init(void);
 /* USER CODE BEGIN PFP */
+/*
+ * These two functions are identical in implementation to their algorithm.c
+ * counterparts.
+ */
 uint16_t max_index(uint16_t arr[], uint16_t start_idx, uint16_t end_idx);
 uint8_t rounded(float num);
+
+/*
+ * Callback function for the USART DMA.
+ * Polling is too slow for our chosen sample rate.
+ */
 void DMATransferComplete(DMA_HandleTypeDef *hdma);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+/*
+ * This project makes use of Charles Nicholson's nanoprintf library, the
+ * smallest public printf implementation for its feature set. This version uses
+ * a lot less memory and is considerably faster than the stdio version of
+ * snprintf(), which is used to write to the USART buffer in this program.
+ */
 #define NANOPRINTF_IMPLEMENTATION
 #include "nanoprintf.h"
 /* USER CODE END 0 */
@@ -97,6 +139,7 @@ void DMATransferComplete(DMA_HandleTypeDef *hdma);
 int main(void)
 {
   /* USER CODE BEGIN 1 */
+	/* USART buffer. */
 	char msg[20];
 
 	uint16_t x[3];
@@ -113,13 +156,20 @@ int main(void)
 	float y_val;
 	uint16_t notched_val;
 	float notched_bar_val = 0;
-	short h_hat_val = 0;
-	uint16_t h_val = 0;
+	short h_hat_val;
+	uint16_t h_val;
+
+	/*
+	 * The triangle filter matching template computation runs into an overflow
+	 * issue on this platform, so it's broken into two parts using these
+	 * variables before they're multiplied together.
+	 */
 	float t_val1, t_val2;
-	float t_val = 0;
+
+	float t_val;
 	float l1_val = 0;
 	float l2_val = 0;
-	float th_val = 0;
+	float th_val;
 	float theta;
 
 	uint16_t i;
@@ -141,6 +191,10 @@ int main(void)
 	uint16_t rr;
 	float bpm = 0;
 
+	/*
+	 * Keeps track of flicker duration for the LED that triggers when
+	 * an R-peak has been detected.
+	 */
 	uint8_t led_counter = 0;
   /* USER CODE END 1 */
 
@@ -167,7 +221,10 @@ int main(void)
   MX_ADC1_Init();
   MX_TIM6_Init();
   /* USER CODE BEGIN 2 */
+  /* Required for USART DMA. */
   HAL_DMA_RegisterCallback(&hdma_usart2_tx, HAL_DMA_XFER_CPLT_CB_ID, &DMATransferComplete);
+
+  /* Timer used for the super loop. Triggers every sample period. */
   HAL_TIM_Base_Start_IT(&htim6);
   /* USER CODE END 2 */
 
@@ -176,9 +233,18 @@ int main(void)
   while (1)
   {
 	  if (fs_elapsed_flag) {
+		  /*
+		   * Once the sample period corresponding to FS has triggered, immediately
+		   * disable the flag.
+		   */
 		  fs_elapsed_flag = 0;
 
 		  if (led_counter > 0) {
+			  /*
+			   * If led_counter has been incremented, then the R-peak detection flag
+			   * was recently raised. Keep incrementing the counter until the threshold
+			   * is reached, at which point the LED is turned off and the counter reset.
+			   */
 			  if (led_counter == (FS / 20) + 1) {
 				  led_counter = 0;
 				  HAL_GPIO_WritePin(Green_Led_GPIO_Port, Green_Led_Pin, GPIO_PIN_RESET);
@@ -188,6 +254,12 @@ int main(void)
 		  }
 
 		  if (HAL_GPIO_ReadPin(AD8232_LOD_GPIO_Port, AD8232_LOD_Pin) == GPIO_PIN_SET) {
+			  /*
+			   * The AD8232's LOD pin indicates whether at least one of the leads are
+			   * disconnected. In this case, the necessary memory buffers, moving
+			   * average accumulators, buffer indices, flags, and outgoing signals
+			   * are cleared until valid data is known to be available at the ADC.
+			   */
 			  memset(x, 0, sizeof(x));
 			  memset(y, 0, sizeof(y));
 			  notched_bar_val = 0;
@@ -201,6 +273,12 @@ int main(void)
 			  i_curr_max = 0;
 			  bpm = 0;
 		  } else {
+			  /*
+			   * Once the leads are connected, a sample is read by the ADC.
+			   * Polling is plenty fast to meet the timing requirements set by
+			   * this algorithm's sampling frequency and the additional overhead
+			   * required for interfacing with DMA is avoided.
+			   */
 			  HAL_ADC_Start(&hadc1);
 			  HAL_ADC_PollForConversion(&hadc1, HAL_MAX_DELAY);
 			  input = HAL_ADC_GetValue(&hadc1);
@@ -248,6 +326,13 @@ int main(void)
 
 				  if (i_h >= WINDOW(S)) {
 					  j = i_h - 1;
+
+					  /*
+					   * As mentioned earlier, the triangle filter matching template
+					   * computation requires two variables to be computed on this platform.
+					   * the two factors of the expression are stored individually before
+					   * being multiplied.
+					   */
 					  t_val1 = h[j - S] - h[j - (2 * S)];
 					  t_val2 = h[j - S] - h[j];
 					  t_val = t_val1 * t_val2;
@@ -298,7 +383,12 @@ int main(void)
 											  i_curr_max = i_cand_max;
 										  }
 									  } else {
+										  /*
+										   * Raise a flag to transmit the new bpm
+										   * reading and trigger the LED.
+										   */
 										  r_peak_detected_flag = 1;
+
 										  i_prev_max = i_curr_max;
 										  i_curr_max = i_cand_max;
 										  rr = i_curr_max - i_prev_max;
@@ -310,15 +400,28 @@ int main(void)
 					  }
 				  }
 				  if (r_peak_detected_flag) {
+					  /* Immediately disable the flag. */
 					  r_peak_detected_flag = 0;
 
+					  /*
+					   * Trigger the LED and increment the counter. A non-zero
+					   * counter value means the LED is on.
+					   */
 					  HAL_GPIO_WritePin(Green_Led_GPIO_Port, Green_Led_Pin, GPIO_PIN_SET);
 					  led_counter++;
 
+					  /*
+					   * Transmit the new bpm reading in addition to the filtered
+					   * ECG signal.
+					   */
 					  npf_snprintf(msg, 20, "%hi,%hu\r\n", h_hat_val, rounded(bpm));
 					  huart2.Instance->CR3 |= USART_CR3_DMAT;
 					  HAL_DMA_Start_IT(&hdma_usart2_tx, (uint32_t)msg, (uint32_t)&huart2.Instance->TDR, strlen(msg));
 				  } else {
+					  /*
+					   * There is no new R-peak detected so the bpm reading is unchanged.
+					   * Transmit only the ECG signal.
+					   */
 					  npf_snprintf(msg, 20, "%hi\r\n", h_hat_val);
 					  huart2.Instance->CR3 |= USART_CR3_DMAT;
 					  HAL_DMA_Start_IT(&hdma_usart2_tx, (uint32_t)msg, (uint32_t)&huart2.Instance->TDR, strlen(msg));
@@ -616,6 +719,7 @@ void DMATransferComplete(DMA_HandleTypeDef *hdma) {
   huart2.Instance->CR3 &= ~USART_CR3_DMAT;
 }
 
+/* Triggers the main() superloop using a flag. */
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim) {
 	if (htim->Instance == TIM6) {
 		fs_elapsed_flag = 1;
