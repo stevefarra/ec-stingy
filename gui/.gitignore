@@ -1,4 +1,0 @@
-# Ignore all directories starting with 'build'
-build*/
-
-# Other ignore rules...
