@@ -24,6 +24,7 @@
 
 % Used for the FFT and notch filter sections of the script.
 pkg load signal;
+pkg load control;
 
 % The moving average window lengths in the R-peak detection paper used
 % specified as one-sided. This macro is used to convert between the two.
@@ -68,26 +69,32 @@ x = data(:,1);
 % analysis of the frequency content of our signal. In our case, there is a high
 % amount of powerline interference present at 59 Hz since our electrode cables
 % don't have any shielding.
-signal_length = length(x);
-frequency_resolution = Fs / signal_length;
-frequency_axis = (0:(signal_length/2)) * frequency_resolution;
-signal_no_dc = x - mean(x);
-signal_fft = fft(signal_no_dc);
-magnitude_spectrum = abs(signal_fft);
-magnitude_spectrum = magnitude_spectrum(1:(signal_length/2 + 1));
+sig_len = length(x);
+freq_res = Fs / sig_len;
+freq_axis = (0:(sig_len/2)) * freq_res;
+sig_no_dc = x - mean(x);
+sig_fft = fft(sig_no_dc);
+mag_spectrum = abs(sig_fft);
+mag_spectrum = mag_spectrum(1:(sig_len/2 + 1));
 
 % We use a Notch filter to eliminate powerline interference. Be sure to adjust
 % the frequency and bandwidth of the filter according to your needs. Keep in
 % mind this filter is not included in the paper and is unnecessary for R-peak
 % detection. However, we include it so that our ECG can double as a cardiac
 % monitor in addition to being a heart rate monitor.
-notch_frequency = 59;
-notch_bandwidth = 5;
-notch_frequency_normalized = notch_frequency / (Fs/2);
-notch_bandwidth_normalized = notch_bandwidth / (Fs/2);
-[b, a] = pei_tseng_notch(notch_frequency_normalized,
-                         notch_bandwidth_normalized);
-notched = filter(b, a, x);
+notch_freq = 59;
+notch_bw = 5;
+notch_freq_normalized = notch_freq / (Fs/2);
+notch_bw_normalized = notch_bw / (Fs/2);
+[notch_b, notch_a] = pei_tseng_notch(notch_freq_normalized,notch_bw_normalized);
+notched = filter(notch_b, notch_a, x);
+
+% To display the Bode magnitude later on, we convert the x and y axes to
+% Hz and dB respectively.
+notch_sys = tf(notch_b, notch_a, 1/Fs);
+[notch_mag, notch_pha, notch_w] = bode(notch_sys);
+notch_x_plot = notch_w/(2*pi);
+notch_y_plot = 20*log10(notch_mag);
 
 % High-pass filter, implemented as stated in the paper.
 notched_bar = movmean(notched, window(N));
@@ -195,21 +202,29 @@ t_plot = (1:length(x)) / Fs;
 figure(1);
 
 % Plot of the ECG signal imported by the user.
-subplot(3,1,1);
+subplot(4,1,1);
 plot(t_plot, x);
 xlabel('Time (s)');
 ylabel('Amplitude');
 title('Original ECG Signal');
 
 % Frequency spectrum of the ECG signal.
-subplot(3,1,2);
-plot(frequency_axis, magnitude_spectrum);
+subplot(4,1,2);
+plot(freq_axis, mag_spectrum);
 xlabel('Frequency (Hz)');
 ylabel('Magnitude');
 title('Magnitude Spectrum (DC noise removed)');
 
+% Bode magnitude plot of the notch filter applied to the ECG signal.
+subplot(4,1,3);
+semilogx(notch_x_plot, notch_y_plot);
+grid on;
+xlabel('Frequency (Hz)');
+ylabel('Magnitude (dB)');
+title('Notch Filter Bode Plot');
+
 % The original ECG signal after the notch filter has been applied to it.
-subplot(3,1,3);
+subplot(4,1,4);
 plot(t_plot, notched);
 xlabel('Time (s)');
 ylabel('Amplitude');
