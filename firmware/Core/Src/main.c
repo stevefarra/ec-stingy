@@ -253,7 +253,7 @@ int main(void)
 			  }
 		  }
 
-		  if (HAL_GPIO_ReadPin(AD8232_LOD_GPIO_Port, AD8232_LOD_Pin) == GPIO_PIN_SET) {
+		  if (HAL_GPIO_ReadPin(AD8232_LOD_P_GPIO_Port, AD8232_LOD_P_Pin) == GPIO_PIN_SET) {
 			  /*
 			   * The AD8232's LOD pin indicates whether at least one of the leads are
 			   * disconnected. In this case, the necessary memory buffers, moving
@@ -654,11 +654,16 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOF_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
-  __HAL_RCC_GPIOD_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(LED_GPIO_Port, LED_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pins : AD8232_LOD_P_Pin AD8232_LOD_N_Pin */
+  GPIO_InitStruct.Pin = AD8232_LOD_P_Pin|AD8232_LOD_N_Pin;
+  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
+  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /*Configure GPIO pin : LED_Pin */
   GPIO_InitStruct.Pin = LED_Pin;
@@ -666,12 +671,6 @@ static void MX_GPIO_Init(void)
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(LED_GPIO_Port, &GPIO_InitStruct);
-
-  /*Configure GPIO pin : AD8232_LOD_Pin */
-  GPIO_InitStruct.Pin = AD8232_LOD_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_INPUT;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
-  HAL_GPIO_Init(AD8232_LOD_GPIO_Port, &GPIO_InitStruct);
 
 /* USER CODE BEGIN MX_GPIO_Init_2 */
 /* USER CODE END MX_GPIO_Init_2 */

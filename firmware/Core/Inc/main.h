@@ -59,14 +59,16 @@ void Error_Handler(void);
 /* Private defines -----------------------------------------------------------*/
 #define RCC_OSC32_OUT_Pin GPIO_PIN_15
 #define RCC_OSC32_OUT_GPIO_Port GPIOC
+#define AD8232_LOD_P_Pin GPIO_PIN_0
+#define AD8232_LOD_P_GPIO_Port GPIOC
+#define AD8232_LOD_N_Pin GPIO_PIN_1
+#define AD8232_LOD_N_GPIO_Port GPIOC
 #define LED_Pin GPIO_PIN_5
 #define LED_GPIO_Port GPIOA
 #define TMS_Pin GPIO_PIN_13
 #define TMS_GPIO_Port GPIOA
 #define TCK_Pin GPIO_PIN_14
 #define TCK_GPIO_Port GPIOA
-#define AD8232_LOD_Pin GPIO_PIN_2
-#define AD8232_LOD_GPIO_Port GPIOD
 #define SWO_Pin GPIO_PIN_3
 #define SWO_GPIO_Port GPIOB
 
