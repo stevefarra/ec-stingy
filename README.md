@@ -8,7 +8,7 @@ The EC(stin)G(y) is an end-to-end design and implementation of a cheap, compact,
 This project can serve as a boilerplate for any device that measures the electrical activity of the heart and be easily adapted to meet the user's needs. By open-sourcing the design files and code, the project aims to make medical hardware and technology more accessible and reduce the barrier to entry for prototyping. 
 
 ## Directory Overview
-Each folder corresponds to a discrete stage of development or component of the final product, and are listed in the order they were tackled.
+Each folder corresponds to a discrete stage of development or component of the final product.
 
 [`algorithm/`](algorithm/) - A simulation suite for prototyping digital signal filtering and peak detection.
 
