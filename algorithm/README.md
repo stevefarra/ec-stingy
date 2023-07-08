@@ -16,3 +16,4 @@ Three things are immediately apparent about the raw signal:
 1. It has a large DC offset
 2. The mains hum is prevalent
 3. The waveform is fairly distorted (P and T waves are indiscernable)
+
