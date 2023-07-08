@@ -41,4 +41,6 @@ With our notched ECG signal above denoted as $\text{ECG}[n]$, we begin cascading
 $$\bar{x} = \text{MA}(x[n],N)$$
 $$\hat{h} = x - \bar{x}$$
 $$h = |\hat{h}|$$
-The output of which is
+With DC noise and negative values forgone, we have a signal we can eventually perform peak detection on:
+![High pass filter](https://raw.githubusercontent.com/stevefarra/ec-stingy/main/docs/visuals/high_pass_filter.png)
+
