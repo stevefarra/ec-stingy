@@ -32,13 +32,16 @@ Here is the resultant signal, which now has something resembling a P-wave. The D
 
 ![Filtered ECG signal](https://raw.githubusercontent.com/stevefarra/ec-stingy/main/docs/visuals/ecg_signal_filtered.png)
 
-### R-peak detection
+### Heart rate detection
 Every prominent R-peak detection algorithm has three distinct stages: signal conditioning, thresholding, and R-peak searching. This project uses an algorithm published in 2019 that improves upon previous approaches by introducing a triangle template matching filter to reduce the resource complexity present in other algorithms used in embedded devices. To explain the signal conditioning we first introduce some notation for a moving average filter centered around the current element (assume the signal is zero-padded):
 $$\text{MA}(x[n],N)=\frac{1}{2N+1}\sum_{-N}^{N}x[n+N]$$
 And the triangle template matching filter:
 $$\text{TR}(x[n],N)=(x[n]-x[n-N])(x[n]-x[n+N])$$
 With our notched ECG signal above denoted as $\text{ECG}[n]$, we begin cascading filters. The first is a high-pass filter:
 $$\bar{x} = \text{MA}(x[n],N)$$
-$$\hat{h} = x - \bar{x}$$
-$$h = |\hat{h}|$$
-The output of which is
+$$\hat{h}[n] = x[n] - \bar{x}[n]$$
+$$h[n] = |\hat{h}[n]|$$
+With DC noise and negative values forgone, we have a signal we can eventually perform peak detection on:
+
+![High pass filter](https://raw.githubusercontent.com/stevefarra/ec-stingy/main/docs/visuals/high_pass_filter.png)
+
