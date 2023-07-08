@@ -34,12 +34,12 @@ Here is the resultant signal, which now has something resembling a P-wave. The D
 
 ### A Tribe Called QRS: Implementing heart rate detection
 Every prominent R-peak detection algorithm has three distinct stages: signal conditioning, thresholding, and R-peak searching. This project uses an algorithm published in 2019 that improves upon previous approaches by introducing a triangle template matching filter to reduce the resource complexity present in other algorithms used in embedded devices. To explain the signal conditioning we first introduce some notation for a moving average filter centered around the current element (assume the signal is zero-padded):
-$$\text{MA}(x[i],N):=\frac{1}{2N+1}\sum_{-N}^{N}x[i+N]$$
+$$\text{MA}(x[i],R):=\frac{1}{2R+1}\sum_{-R}^{R}x[i+R]$$
 And the triangle template matching filter:
-$$\text{TR}(x[i],N):=(x[i]-x[i-N])(x[i]-x[i+N])$$
+$$\text{TR}(x[i],R):=(x[i]-x[i-R])(x[i]-x[i+R])$$
 With our notched ECG signal above denoted as $\text{ECG}[i]$, we begin cascading filters. The first is a high-pass filter:
-$$\bar{x} = \text{MA}(x[i],N)$$
-$$\hat{h}[i] = x[i] - \bar{x}[i]$$
+$$\overline{\text{ECG}}[i] = \text{MA}(\text{ECG}[i],N)$$
+$$\hat{h}[i] = \text{ECG}[i] - \overline{\text{ECG}}[i]$$
 $$h[i] = |\hat{h}[i]|$$
 With DC noise and negative values forgone, we have a signal we can eventually perform peak detection on:
 
@@ -58,4 +58,8 @@ The first low pass filter, $l_1$, is used to "smoothen out" the output of the tr
 
 ![Threshold](https://github.com/stevefarra/ec-stingy/blob/main/docs/visuals/threshold.png?raw=true)
 
-Regions where $l_1$ (blue plot) is greater than the threshold value (red plot) is considered an AOI (area of interest) and maxima within each area is considered an R-peak. An error correction step must also be applied, however, because the peaks produced by $l_1$ are not perfectly convex, AOIs that should be one contiguous region are sometimes detected as two separate regions. For an example of this, notice how the fourth QRS region in $l_1$ crosses the threshold, dips back down, and crosses over once again, resulting in false positives. To ameliorate this, the algorithm leverages the fact that the the theoretical maximum heart rate is 206 bpm, so when a detected R-R interval which exceeds this value the lower amplitude R-peak is discarded.
+Regions where $l_1$ (blue plot) is greater than the threshold value (red plot) is considered an AOI (area of interest) and maxima within each area is considered an R-peak. An error correction step must also be applied, however, because the peaks produced by $l_1$ are not perfectly convex, AOIs that should be one contiguous region are sometimes detected as two separate regions. For an example of this, notice how the fourth QRS region in $l_1$ crosses the threshold, dips back down, and crosses over once again, resulting in false positives. To ameliorate this, the algorithm leverages the fact that the the theoretical maximum heart rate is 206 bpm, so when a detected R-R interval which exceeds this value the lower amplitude R-peak is discarded. With these rules applied, the detected R-peaks look like:
+
+![R-peaks](https://raw.githubusercontent.com/stevefarra/ec-stingy/main/docs/visuals/r_peaks.png)
+
+The heart rate readings, in units of bpm, are trivially calculated as $60/\text{RR}$, where $\text{RR}$ is the distance between successive R-peaks.
