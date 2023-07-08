@@ -45,3 +45,6 @@ With DC noise and negative values forgone, we have a signal we can eventually pe
 
 ![High pass filter](https://raw.githubusercontent.com/stevefarra/ec-stingy/main/docs/visuals/high_pass_filter.png)
 
+Next is the triangle filter, $t[n]=\text{TR}(h[n],s)$, which accentuates the QRS complex.
+
+![Triangle](https://raw.githubusercontent.com/stevefarra/ec-stingy/main/docs/visuals/triangle_filter.png)
