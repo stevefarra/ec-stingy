@@ -264,4 +264,3 @@ ylabel('Amplitude');
 title("Low-pass Filtered Triangle Template Matching Output \
 with Modified Threshold Overlay");
 legend('Low-pass Filtered', 'Modified Threshold');
-
