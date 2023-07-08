@@ -10,4 +10,4 @@
 ## Design process
 Before starting, I wanted to record a signal that was as close as possible to what would be read by the ADC on our final PCB. Although the stock filter configuration on the AD8232 evaluation board isn't exactly what's intended for the final hardware design, the algorithm should be resilient to changes in filtering.
 
-![Original ECG Signal](https://raw.githubusercontent.com/stevefarra/ec-stingy/main/docs/visuals/original_ecg_signal.png)
+![Original ECG Signal](https://raw.githubusercontent.com/stevefarra/ec-stingy/99f3c6aaf49172efc2e4a5257341d4cca9ebce85/docs/visuals/output.svg)
