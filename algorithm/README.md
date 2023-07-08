@@ -61,3 +61,5 @@ The first low pass filter, $l_1$, is used to "smoothen out" the output of the tr
 Regions where $l_1$ (blue plot) is greater than the threshold value (red plot) is considered an AOI (area of interest) and maxima within each area is considered an R-peak. An error correction step must also be applied, however, because the peaks produced by $l_1$ are not perfectly convex, AOIs that should be one contiguous region are sometimes detected as two separate regions. For an example of this, notice how the fourth QRS region in $l_1$ crosses the threshold, dips back down, and crosses over once again, resulting in false positives. To ameliorate this, the algorithm leverages the fact that the the theoretical maximum heart rate is 206 bpm, so when a detected R-R interval which exceeds this value the lower amplitude R-peak is discarded. With these rules applied, the detected R-peaks look like:
 
 ![R-peaks](https://raw.githubusercontent.com/stevefarra/ec-stingy/main/docs/visuals/r_peaks.png)
+
+The heart rate readings, in units of bpm, are trivially calculated as $60/\text{RR}$, where $\text{RR}$ is the distance between successive R-peaks.
