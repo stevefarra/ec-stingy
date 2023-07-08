@@ -8,9 +8,10 @@
 
 [`scope.csv`](algorithm/scope.csv) - Several seconds of an ECG signal captured by a serial oscilloscope for testing purposes; see [`firmware/`](firmware/) for more details about the prototype used to capture this data.
 ## Design process
+### Hum's the Word: Removing powerline interference
 Before starting, we want to record a signal that was as close as possible to what would be read by the ADC on our final PCB. Although the stock filter configuration on the AD8232 evaluation board isn't exactly what's intended for the final hardware design, the algorithm should be resilient to changes in filtering and should therefore be valid for our purposes.
 
-![Original ECG signal](https://raw.githubusercontent.com/stevefarra/ec-stingy/main/docs/visuals/original_ecg_signal_2.png)
+![Original ECG signal](https://raw.githubusercontent.com/stevefarra/ec-stingy/main/docs/visuals/original_ecg_signal.png)
 
 Three things are immediately apparent about the raw signal:
 1. Large DC offset
@@ -27,6 +28,17 @@ Using Octave's `pei_tseng_notch()` function means we only need to use a bit of t
 
 ![Notch filter bode plot](https://raw.githubusercontent.com/stevefarra/ec-stingy/main/docs/visuals/notch_filter_bode_plot.png)
 
-Here is the resultant signal:
+Here is the resultant signal, which now has something resembling a P-wave. The DC offset is still present but is addressed during R-peak detection, detailed below.
 
 ![Filtered ECG signal](https://raw.githubusercontent.com/stevefarra/ec-stingy/main/docs/visuals/ecg_signal_filtered.png)
+
+### R-peak detection
+Every prominent R-peak detection algorithm has three distinct stages: signal conditioning, thresholding, and R-peak searching. This project uses an algorithm published in 2019 that improves upon previous approaches by introducing a triangle template matching filter to reduce the resource complexity present in other algorithms used in embedded devices. To explain the signal conditioning we first introduce some notation for a moving average filter centered around the current element (assume the signal is zero-padded):
+$$\text{MA}(x[n],N)=\frac{1}{2N+1}\sum_{-N}^{N}x[n+N]$$
+And the triangle template matching filter:
+$$\text{TR}(x[n],N)=(x[n]-x[n-N])(x[n]-x[n+N])$$
+With our notched ECG signal above denoted as $\text{ECG}[n]$, we begin cascading filters. The first is a high-pass filter:
+$$\bar{x} = \text{MA}(x[n],N)$$
+$$\hat{h} = x - \bar{x}$$
+$$h = |\hat{h}|$$
+The output of which is
