@@ -27,6 +27,6 @@ Using Octave's `pei_tseng_notch()` function means we only need to use a bit of t
 
 ![Notch filter bode plot](https://raw.githubusercontent.com/stevefarra/ec-stingy/main/docs/visuals/notch_filter_bode_plot.png)
 
-Here is the resultant signal:
+Here is the resultant signal. You can even see some semblance of a P-wave!
 
 ![Filtered ECG signal](https://raw.githubusercontent.com/stevefarra/ec-stingy/main/docs/visuals/ecg_signal_filtered.png)
