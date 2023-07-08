@@ -39,8 +39,8 @@ And the triangle template matching filter:
 $$\text{TR}(x[n],N)=(x[n]-x[n-N])(x[n]-x[n+N])$$
 With our notched ECG signal above denoted as $\text{ECG}[n]$, we begin cascading filters. The first is a high-pass filter:
 $$\bar{x} = \text{MA}(x[n],N)$$
-$$\hat{h} = x - \bar{x}$$
-$$h = |\hat{h}|$$
+$$\hat{h}[n] = x[n] - \bar{x}[n]$$
+$$h[n] = |\hat{h}[n]|$$
 With DC noise and negative values forgone, we have a signal we can eventually perform peak detection on:
 
 ![High pass filter](https://raw.githubusercontent.com/stevefarra/ec-stingy/main/docs/visuals/high_pass_filter.png)
