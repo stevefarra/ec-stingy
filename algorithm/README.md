@@ -29,3 +29,4 @@ Using Octave's `pei_tseng_notch()` function means we only need to use a bit of t
 
 Here is the resultant signal:
 
+![Filtered ECG signal](https://raw.githubusercontent.com/stevefarra/ec-stingy/main/docs/visuals/ecg_signal_filtered.png)
