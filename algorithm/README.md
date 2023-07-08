@@ -34,17 +34,28 @@ Here is the resultant signal, which now has something resembling a P-wave. The D
 
 ### Heart rate detection
 Every prominent R-peak detection algorithm has three distinct stages: signal conditioning, thresholding, and R-peak searching. This project uses an algorithm published in 2019 that improves upon previous approaches by introducing a triangle template matching filter to reduce the resource complexity present in other algorithms used in embedded devices. To explain the signal conditioning we first introduce some notation for a moving average filter centered around the current element (assume the signal is zero-padded):
-$$\text{MA}(x[n],N)=\frac{1}{2N+1}\sum_{-N}^{N}x[n+N]$$
+$$\text{MA}(x[i],N):=\frac{1}{2N+1}\sum_{-N}^{N}x[i+N]$$
 And the triangle template matching filter:
-$$\text{TR}(x[n],N)=(x[n]-x[n-N])(x[n]-x[n+N])$$
-With our notched ECG signal above denoted as $\text{ECG}[n]$, we begin cascading filters. The first is a high-pass filter:
-$$\bar{x} = \text{MA}(x[n],N)$$
-$$\hat{h}[n] = x[n] - \bar{x}[n]$$
-$$h[n] = |\hat{h}[n]|$$
+$$\text{TR}(x[i],N):=(x[i]-x[i-N])(x[i]-x[i+N])$$
+With our notched ECG signal above denoted as $\text{ECG}[i]$, we begin cascading filters. The first is a high-pass filter:
+$$\bar{x} = \text{MA}(x[i],N)$$
+$$\hat{h}[i] = x[i] - \bar{x}[i]$$
+$$h[i] = |\hat{h}[i]|$$
 With DC noise and negative values forgone, we have a signal we can eventually perform peak detection on:
 
 ![High pass filter](https://raw.githubusercontent.com/stevefarra/ec-stingy/main/docs/visuals/high_pass_filter.png)
 
-Next is the triangle filter, $t[n]=\text{TR}(h[n],s)$, which accentuates the QRS complex.
+Next is the triangle filter, $t[i]=\text{TR}(h[i],s)$, which accentuates the QRS complex:
 
 ![Triangle](https://raw.githubusercontent.com/stevefarra/ec-stingy/main/docs/visuals/triangle_filter.png)
+
+Finally, the thresholding filters:
+$$l_1[i] = \text{MA}(t[i],L)$$
+$$l_2[i] = \text{MA}(t[i],M)$$
+$$\text{threshold}[i] = \beta l_2[i] + \theta$$
+
+The first low pass filter, $l_1$, is used to "smoothen out" the output of the triangle filter while $l_2$ is used to set the threshold value. The result is
+
+![Threshold](https://github.com/stevefarra/ec-stingy/blob/main/docs/visuals/threshold.png?raw=true)
+
+Regions where $l_1$ (blue plot) is greater than the threshold value (red plot) is considered an AOI (area of interest) and maxima within each area is considered an R-peak. An error correction step must also be applied, however, because the peaks produced by $l_1$ are not perfectly convex, AOIs that should be one contiguous region are sometimes detected as two separate regions. For an example of this, notice how the fourth QRS region in $l_1$ crosses the threshold, dips back down, and crosses over once again, resulting in false positives. To ameliorate this, the algorithm leverages the fact that the the theoretical maximum heart rate is 206 bpm, so when a detected R-R interval which exceeds this value the lower amplitude R-peak is discarded.
