@@ -32,7 +32,7 @@ Here is the resultant signal, which now has something resembling a P-wave. The D
 
 ![Filtered ECG signal](https://raw.githubusercontent.com/stevefarra/ec-stingy/main/docs/visuals/ecg_signal_filtered.png)
 
-### Heart rate detection
+### A Tribe Called QRS: Implementing heart rate detection
 Every prominent R-peak detection algorithm has three distinct stages: signal conditioning, thresholding, and R-peak searching. This project uses an algorithm published in 2019 that improves upon previous approaches by introducing a triangle template matching filter to reduce the resource complexity present in other algorithms used in embedded devices. To explain the signal conditioning we first introduce some notation for a moving average filter centered around the current element (assume the signal is zero-padded):
 $$\text{MA}(x[i],N):=\frac{1}{2N+1}\sum_{-N}^{N}x[i+N]$$
 And the triangle template matching filter:
