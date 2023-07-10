@@ -63,3 +63,9 @@ Regions where $l_1$ (blue plot) is greater than the threshold value (red plot) i
 ![R-peaks](https://raw.githubusercontent.com/stevefarra/ec-stingy/main/docs/visuals/r_peaks.png)
 
 The heart rate readings, in units of bpm, are trivially calculated as $60/\text{RR}$, where $\text{RR}$ is the distance between successive R-peaks.
+
+(Mention parameters here)
+
+### Sync or Swim: Adaptations for a real-time environment
+
+The next step 
