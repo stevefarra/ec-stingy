@@ -67,5 +67,3 @@ The heart rate readings, in units of bpm, are trivially calculated as $60/\text{
 (Mention parameters here)
 
 ### Sync or Swim: Adaptations for a real-time environment
-
-The next step 
