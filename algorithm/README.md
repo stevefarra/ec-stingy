@@ -70,6 +70,7 @@ Regions where $l_1$ (blue plot) is greater than the threshold value (red plot) a
 The heart rate readings, in units of bpm, are trivially calculated as $60/\text{RR}$, where $\text{RR}$ is the distance between successive R-peaks.
 
 ### Sync or Swim: Adaptations for a real-time environment
+<<<<<<< HEAD
 
 The moving average filter, implemented naively, presents a problem for real-time systems where filter outputs are computed continuously:
 1. It requires division of very large numbers, or numerous (in our case, hundreds of) division operations to compute a single point.
@@ -109,3 +110,5 @@ Our final consideration is the value of $\theta$ in the threshold computation. T
   - `peak_middle()`
   
   A double-ended queue could be implemented to easily include these functions. Doing so would mean we wouldn't waste so many clock cycles shifting arrays. The drawback of this approach is that a lot more memory gets used in storing the address of each sample, and because RAM size is a more limiting factor than processing power, we opt for linear buffers.
+=======
+>>>>>>> ede8d46aa969c652eeba8955bdb0edecea1f2c62
