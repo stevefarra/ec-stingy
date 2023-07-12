@@ -13,7 +13,7 @@ Before starting, we want to record a signal that was as close as possible to wha
 
 ![Original ECG signal](https://raw.githubusercontent.com/stevefarra/ec-stingy/main/docs/visuals/original_ecg_signal.png)
 
-Three things are immediately apparent about the raw signal:
+Three properties of the raw signal are immediately apparent:
 1. Large DC offset
 2. Mains hum prevalence
 3. Noticeable waveform distortion (P and T waves are indiscernable)
@@ -33,7 +33,22 @@ Here is the resultant signal, which now has something resembling a P-wave. The D
 ![Filtered ECG signal](https://raw.githubusercontent.com/stevefarra/ec-stingy/main/docs/visuals/ecg_signal_filtered.png)
 
 ### A Tribe Called QRS: Implementing heart rate detection
-Every prominent R-peak detection algorithm has three distinct stages: signal conditioning, thresholding, and R-peak searching. This project uses an algorithm published in 2019 that improves upon previous approaches by introducing a triangle template matching filter to reduce the resource complexity present in other algorithms used in embedded devices. To explain the signal conditioning we first introduce some notation for a moving average filter centered around the current element (assume the signal is zero-padded):
+Every prominent R-peak detection algorithm has three distinct stages: signal conditioning, thresholding, and R-peak searching. This project uses an algorithm published in 2019 that improves upon previous approaches by introducing a triangle template matching filter to reduce the resource complexity present in other algorithms used in embedded devices. 
+
+The signal conditioning filters depend on a set of parameters that depend on the sampling frequency $f_\text{s}$. The paper provides their recommendations for the canonical rate of $f_\text{s} = \text{360 Hz}$ as well as a procedure for determining some of them given $f_\text{s}$.
+
+| Parameter | Description | Value |
+|---|---|---|
+| $f_\text{s}$ | Sampling frequency | $\text{360 Hz}$ |
+| $N$ | $h[i]$ window radius | $25$ |
+| $s$ | $t[i]$ parameter | $7$ |
+| $L$ | $l_1[i]$ window radius | $5$ |
+| $M$ | $l_2[i]$ window radius | $150$ |
+| $\beta$ | Threshold coefficient | $2.5$ |
+| $\theta$ | Threshold offset | $\text{mean}(l_1[i])/4$ |
+
+With the parameters set, we introduce some notation for a moving average filter centered around the current element (assume the signal is zero-padded):
+
 $$\text{MA}(x[i],R):=\frac{1}{2R+1}\sum_{-R}^{R}x[i+R]$$
 And the triangle template matching filter:
 $$\text{TR}(x[i],R):=(x[i]-x[i-R])(x[i]-x[i+R])$$
@@ -41,7 +56,7 @@ With our notched ECG signal above denoted as $\text{ECG}[i]$, we begin cascading
 $$\overline{\text{ECG}}[i] = \text{MA}(\text{ECG}[i],N)$$
 $$\hat{h}[i] = \text{ECG}[i] - \overline{\text{ECG}}[i]$$
 $$h[i] = |\hat{h}[i]|$$
-With DC noise and negative values forgone, we have a signal we can eventually perform peak detection on:
+With DC noise and negative values forgone, we have a signal suitable for peak detection:
 
 ![High pass filter](https://raw.githubusercontent.com/stevefarra/ec-stingy/main/docs/visuals/high_pass_filter.png)
 
@@ -58,8 +73,58 @@ The first low pass filter, $l_1$, is used to "smoothen out" the output of the tr
 
 ![Threshold](https://github.com/stevefarra/ec-stingy/blob/main/docs/visuals/threshold.png?raw=true)
 
-Regions where $l_1$ (blue plot) is greater than the threshold value (red plot) is considered an AOI (area of interest) and maxima within each area is considered an R-peak. An error correction step must also be applied, however, because the peaks produced by $l_1$ are not perfectly convex, AOIs that should be one contiguous region are sometimes detected as two separate regions. For an example of this, notice how the fourth QRS region in $l_1$ crosses the threshold, dips back down, and crosses over once again, resulting in false positives. To ameliorate this, the algorithm leverages the fact that the the theoretical maximum heart rate is 206 bpm, so when a detected R-R interval which exceeds this value the lower amplitude R-peak is discarded. With these rules applied, the detected R-peaks look like:
+Regions where $l_1$ (blue plot) is greater than the threshold value (red plot) are considered an AOI (area of interest) and maxima within each area are considered R-peaks. An error correction step must also be applied, however. Because the peaks produced by $l_1$ are not perfectly convex, AOIs that should be one contiguous region are sometimes detected as two separate regions. For an example of this, notice how the fourth QRS region in $l_1$ crosses the threshold, dips back down, and crosses over once again, resulting in false positives. To ameliorate this, the algorithm leverages the fact that the the theoretical maximum heart rate is 206 bpm, so when a detected R-R interval which exceeds this value the lower amplitude R-peak is discarded. With these rules applied, the detected R-peaks look like:
 
 ![R-peaks](https://raw.githubusercontent.com/stevefarra/ec-stingy/main/docs/visuals/r_peaks.png)
 
 The heart rate readings, in units of bpm, are trivially calculated as $60/\text{RR}$, where $\text{RR}$ is the distance between successive R-peaks.
+
+### Sync or Swim: Adaptations for a real-time environment
+
+The moving average filter, implemented naively, presents a problem for real-time systems where filter outputs are computed continuously:
+1. It requires division of very large numbers, or numerous (in our case, hundreds of) division operations to compute a single point.
+2. It's noncausal, meaning we'll need to introduce signal buffers and keep track of how many samples have been read.
+
+We'll start by using the recursive definition of the moving average filter:
+$$\text{MA}(x[i],R):=\text{MA}(x[i-1],R)+\frac{1}{2R+1}\biggl(x[i+R]-x[i-(R+1)]\biggr)$$
+
+This is a lot more efficient, but still requires the first $2R+1$ outputs to be computed before the outputs are valid, so we use an accumulator to incrementally compute the average before "turning on" the subsequent filter. Also note that the centering of the window is irrelevant, and only the number of samples read must be kept track of. This gives us the following pseudocode:
+```
+macro window(R)
+    2 * R + 1
+end macro
+
+acc = 0
+num_samples = 0
+
+while true do
+    acc = acc + newest_val / window(R)
+    
+    if num_samples > window(R) then
+        acc = acc - oldest_val / window(R)
+    end if
+
+    num_samples = num_samples + 1
+end while
+```
+
+In this case `oldest_val` is the sample which just outside of the current sampling window, which means that the buffer size for a signal that is moving average-filtered must be one greater than the window size, or $2R+2$.
+
+For the signal being fed into the reverse template matching filter, $h[i]$, the domain varies from $i-R$ to $i+R$ so the input signal buffer size need only be equal to $2R + 1$. The computation is relatively simple so no optimizations are needed.
+
+Our final consideration is the value of $\theta$ in the threshold computation. The paper this algorithm is based upon states that "$\theta$ could be one-fourth of the statistical mean of the output of the low-pass filter", and they go on to use a pre-determined value calculated on their expansive database. Because we don't have this luxury, we leverage the fact that our second low-pass filter uses a large enough window size that the difference between its output and the true mean of the signal is negligible so we can set $\theta = l_2[i] / 4$ and compute it in real time.
+
+### Idea graveyard
+**FIR Notch filter**:
+
+**Employ a state machine**: the current real-time program uses nested `if`-statements to ensure delays between cascaded filters and carry out the peak detection logic. A single state machine would increase code legibility and make debugging an easier task.
+
+**Replace linear buffers with a deque**: the current implementation uses arrays as signal buffers that get shifted every sampling period once they're full. However, only 5 operations are needed to compute any filter in the R-peak detection algorithm:
+
+  - `peek_front()`
+  - `pop_front()`
+  - `peek_rear()`
+  - `pop_rear()`
+  - `peak_middle()`
+  
+  A double-ended queue could be implemented to easily include these functions. Doing so would mean we wouldn't waste so many clock cycles shifting arrays. The drawback of this approach is that a deque requires you to store the memory address of each node, so because RAM size is a more limiting factor than processing power, we opt for linear buffers. This keeps the stack size under 5 kB.
