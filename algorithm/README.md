@@ -37,6 +37,8 @@ Every prominent R-peak detection algorithm has three distinct stages: signal con
 
 The signal conditioning filters depend on a set of parameters that depend on the sampling frequency $f_\text{s}$. The paper provides their recommendations for the canonical rate of $f_\text{s} = \text{360 Hz}$ as well as a procedure for determining some of them given $f_\text{s}$.
 
+<div align="center">
+
 | Parameter | Description | Value |
 |---|---|---|
 | $f_\text{s}$ | Sampling frequency | $\text{360 Hz}$ |
@@ -46,6 +48,8 @@ The signal conditioning filters depend on a set of parameters that depend on the
 | $M$ | $l_2[i]$ window radius | $150$ |
 | $\beta$ | Threshold coefficient | $2.5$ |
 | $\theta$ | Threshold offset | $\text{mean}(l_1[i])/4$ |
+
+</div>
 
 With the parameters set, we introduce some notation for a moving average filter centered around the current element (assume the signal is zero-padded):
 
