@@ -24,4 +24,4 @@ Each folder corresponds to a discrete stage of development or component of the f
 
 ## License
 
-ec-stingy is licensed under the [MIT License](LICENSE).
+ec-stingy is licensed under the [MIT License](LICENSE). All files (source code, documentation, plots, and animations) are authored by me unless otherwise stated.

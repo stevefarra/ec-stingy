@@ -8,7 +8,7 @@
 
 [`AD8232.asy`](spice/AD8232.asy) - An LTspice symbol for the AD8232.
 
-[`AD8232_cm.asc`](spice/AD8232_cm.asc) - An LTspice schematic for the AD8232 in the cardiac monitor configuration specified in the datasheet. This file contains 
+[`AD8232_cm.asc`](spice/AD8232_cm.asc) - An LTspice schematic for the AD8232 in the cardiac monitor configuration specified in the datasheet. This file contains simulation commands for both frequency and transient analyses.
 
 Plot of the simulated signal being input to the AD8232:
 ![Raw ECG](../docs/visuals/ecg_raw.png)
