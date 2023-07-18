@@ -37,7 +37,7 @@ Here is a simplified view of the setup:
 
 <div align="center">
 
-![Prototype setup](/docs/visuals/prototype_setup.svg)
+![Prototype setup](/docs/visuals/prototype_setup.png)
 
 </div>
 
