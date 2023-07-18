@@ -13,15 +13,10 @@ The STM32 family of microcontrollers crosses off several boxes that lead to its 
 - Two timers; one that triggers every sample period and another to flash an LED upon QRS detection
 - An ADC with at least 12-bit resolution to capture the AD8232 output signal
 - A dedicated FPU (floating point unit) for real-time signal processing
-- A communication protocol to interface with the computer
-- ~5 kB of RAM
+- A communication protocol to interface with a serial port, for debugging purposes and the GUI (this project uses USART).
+- ~5 kB of RAM, largely used by signal buffers
 
 The STM32F334R8 satisfies all of these requirements, is well-priced, and also had an in-stock development board that was ready to order.
-
-## Chip configuration
-
-
-## External libraries
 
 ## Prototyping setup
 
@@ -35,6 +30,14 @@ The STM32F334R8 satisfies all of these requirements, is well-priced, and also ha
 | [LD1117-3.3 TO-220](https://www.st.com/resource/en/datasheet/ld1117.pdf) | 3.3 V linear voltage regulator |
 | [CAB-12970](https://www.sparkfun.com/products/12970) | SparkFun 3.5 mm jack to 3-electrode cable |
 | [3M 2560](https://www.3m.com/3M/en_US/medical-us/red-dot-ecg-electrodes/) | 3M Red Dot monitoring electrode pads |
+
+</div>
+
+Here is a simplified view of the setup:
+
+<div align="center">
+
+![Prototype setup](/docs/visuals/prototype_setup.svg)
 
 </div>
 
