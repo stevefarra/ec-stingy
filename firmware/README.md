@@ -1,10 +1,10 @@
 # Firmware
 ## Directory overview
-[`Core/`](firmware/Core/): Contains source, header, and startup files for this STM32 project. All user-written code in this project is contained within `Core/Src/main.c`.
+[`Core/`](Core/): Contains source, header, and startup files for this STM32 project. All user-written code in this project is contained within [`Core/Src/main.c`](Core/Src/main.c).
 
-[`Drivers/`](firmware/Drivers/): Contains device-specific drivers and hardware abstraction layer (HAL) files required for this project's chosen STM32 microcontroller.
+[`Drivers/`](Drivers/): Contains device-specific drivers and hardware abstraction layer (HAL) files required for this project's chosen STM32 microcontroller.
 
-[`.mxproject`](firmware/.mxproject), [`firmware.ioc`](firmware/firmware.ioc): Used by STM32CubeIDE to specify configuration information for this project (pin assignments, clock settings, peripheral configurations, etc.).
+[`.mxproject`](.mxproject), [`firmware.ioc`](firmware.ioc): Used by STM32CubeIDE to specify configuration information for this project (pin assignments, clock settings, peripheral configurations, etc.).
 
 ## Chip selection
 
