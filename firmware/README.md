@@ -10,8 +10,8 @@
 
 The STM32 family of microcontrollers crosses off several boxes that lead to its use in this project. In comparison to its competitors/alternatives, it especially has a leg up in (i.e. where it really shines is) the comprehensive suite of development tools, extensive documentation, and vast range of devices. The must-haves for this project were
 
-- A couple simple timers
-- An ADC with at least 12-bit resolution
+- Two timers; one that triggers every sample period and another to flash an LED upon QRS detection
+- An ADC with at least 12-bit resolution to capture the AD8232 output signal
 - A dedicated FPU (floating point unit) for real-time signal processing
 - A communication protocol to interface with the computer
 - ~5 kB of RAM
