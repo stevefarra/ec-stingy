@@ -1,5 +1,5 @@
 # SPICE simulations
-## File overview
+## Directory overview
 [`ecgsyn.m`](spice/ecgsyn_m), [`derivsecgsyn.m`](spice/derivsecgsyn.m) - These are MATLAB scripts sourced from [ECGSYN](https://physionet.org/content/ecgsyn/1.0.0/), a realistic ECG waveform generator open-sourced under the GNU General Public License and used in this project by `gen_ecg.m`.
 
 [`gen_ecg.m`](spice/gen_ecg.m) - An Octave script for generating an ECG waveform suitable for transient analysis in LTspice.
@@ -13,8 +13,6 @@
 We've chosen to use an integrated chip, the AD8232, to interface with our MCU and provide it with a signal suitable for its ADC. Fortunately, its datasheet provides us with several configurations depending on our application, and the cardiac monitor design requires minimal modification to be used in our own project. 
 
 The component values pertaining to the filter characteristics might be re-worked in the future, so in this section we'll provide analysis and situation that would make future modification easier.
-
-
 
 The amplitude of an ECG signal is typically about ~1 mV, which is a resolution that most at-home oscilloscopes can't reach
 
