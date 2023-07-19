@@ -1,6 +1,6 @@
 {
   "board": {
-    "active_layer": 0,
+    "active_layer": 49,
     "active_layer_preset": "",
     "auto_track_width": true,
     "hidden_nets": [],
@@ -62,11 +62,11 @@
       35,
       36
     ],
-    "visible_layers": "fffffff_ffffffff",
+    "visible_layers": "ffcd024_ffffffff",
     "zone_display_mode": 0
   },
   "meta": {
-    "filename": "ec-stingy.kicad_prl",
+    "filename": "pcb.kicad_prl",
     "version": 3
   },
   "project": {
