@@ -1,0 +1,7 @@
+(fp_lib_table
+  (lib (name "105133-0011")(type "KiCad")(uri "${KIPRJMOD}/105133-0011")(options "")(descr ""))
+  (lib (name "AD8232")(type "KiCad")(uri "${KIPRJMOD}/AD8232")(options "")(descr ""))
+  (lib (name "CP2102N-A02-GQFN20R")(type "KiCad")(uri "${KIPRJMOD}/CP2102N-A02-GQFN20R")(options "")(descr ""))
+  (lib (name "PCM12SMTR")(type "KiCad")(uri "${KIPRJMOD}/PCM12SMTR")(options "")(descr ""))
+  (lib (name "PJ-320D-A")(type "KiCad")(uri "${KIPRJMOD}/PJ-320D-A")(options "")(descr ""))
+)

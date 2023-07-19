@@ -1,7 +1,0 @@
-(fp_lib_table
-  (lib (name "AD8232")(type "KiCad")(uri "D:/Repositories/ec-stingy/pcb/AD8232")(options "")(descr ""))
-  (lib (name "PJ-320D-A")(type "KiCad")(uri "D:/Repositories/ec-stingy/pcb/PJ-320D-A")(options "")(descr ""))
-  (lib (name "CP2102N-A02-GQFN20R")(type "KiCad")(uri "D:/Repositories/ec-stingy/pcb/CP2102N-A02-GQFN20R")(options "")(descr ""))
-  (lib (name "105133-0011")(type "KiCad")(uri "D:/Repositories/ec-stingy/pcb/105133-0011")(options "")(descr ""))
-  (lib (name "PCM12SMTR")(type "KiCad")(uri "D:/Repositories/ec-stingy/pcb/PCM12SMTR")(options "")(descr ""))
-)
