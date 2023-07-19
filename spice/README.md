@@ -46,7 +46,11 @@ The flatness of the TP segment is preserved, but now the signal takes several se
 
 Our low-pass filter uses the Sallen-Key filter topology from figure 60 described by
 
-$$f_\text{c}=\frac{1}{2\pi \sqrt{R_1 C_1 R_2 C_2}}$$ $$A_v=1+\frac{R3}{R4}$$ $$Q=\frac{\sqrt{R_1 C_1 R_2 C_2}}{R_1 C_2 + R_2 C_2 + R_1 C_1(1-A_v)}$$
+$$f_\text{c}=\frac{1}{2\pi \sqrt{R_1 C_1 R_2 C_2}}$$
+
+$$A_v=1+\frac{R3}{R4}$$
+
+$$Q=\frac{\sqrt{R_1 C_1 R_2 C_2}}{R_1 C_2 + R_2 C_2 + R_1 C_1(1-A_v)}$$
 
 At our current gain of $A_v = 11$, $C_2$ must remain several times larger than $C_1$ to maintain stability. Because the constraints on $R_1$ and $R_2$ are less delicate, we start by modifying the resistances. To find a starting point, we set $R_1=R_2$, $f_c=150\text{ Hz}$, and keep the capacitances the same, yielding $R_1=R_2 \approx 274\text{ k}\Omega$. In simulation this sets our cut-off to about 158 Hz, so we round both resistances up to the E96 value of 287 kΩ which corresponds to 151 Hz. With these component values, our $Q$ is also set at roughly 0.77, close to the recommended value of 0.7 for maximum passband flatness and sharp cut off. Here is the bode plot of our finalized design:
 
