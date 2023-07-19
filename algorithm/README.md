@@ -22,7 +22,7 @@ We know the DC component dominates, so let's plot the frequency spectrum with it
 
 ![Magnitude spectrum](https://raw.githubusercontent.com/stevefarra/ec-stingy/main/docs/visuals/magnitude_spectrum.png)
 
-Most of the signal contents lay in the 0-30 Hz range with a dominant frequency at exactly 60 Hz, confirming our observation about the mains hum earlier. We want this design to work with electrode cables without any EMI shielding and we also want to retain the ability to use the signal for cardiac monitoring, so filtering will have to be done in the digital domain. A Notch filter allows us to strongly attenuate this particular frequency while introducing minimal distortion to the rest of the signal.
+The narrow band pass used by our development board of 7 to 24 Hz means that signal contents lay in the 0-30 Hz range with a dominant frequency at exactly 60 Hz, confirming our observation about the mains hum earlier. We want this design to work with electrode cables without any EMI shielding and we also want to retain the ability to use the signal for cardiac monitoring, so filtering will have to be done in the digital domain. A Notch filter allows us to strongly attenuate this particular frequency while introducing minimal distortion to the rest of the signal.
 
 Using Octave's `pei_tseng_notch()` function means we only need to use a bit of trial-and-error to find the minimum bandwidth that effectively suppresses the 60 Hz noise, which visually occurs around 5 Hz, and yields a filter with an attentuation reaching nearly -30 dB:
 
@@ -92,7 +92,7 @@ The moving average filter, implemented naively, presents a problem for real-time
 We'll start by using the recursive definition of the moving average filter:
 $$\text{MA}(x[i],R):=\text{MA}(x[i-1],R)+\frac{1}{2R+1}\biggl(x[i+R]-x[i-(R+1)]\biggr)$$
 
-This is a lot more efficient, but still requires the first $2R+1$ outputs to be computed before the outputs are valid, so we use an accumulator to incrementally compute the average before "turning on" the subsequent filter. Also note that the centering of the window is irrelevant, and only the number of samples read must be kept track of. This gives us the following pseudocode:
+This is a lot more efficient, but still requires the first $2R+1$ outputs to be computed before the outputs are valid, so we use an accumulator to incrementally compute the average before "turning on" the subsequent filter. Also note that the centering of the window is irrelevant, and only the number of samples read must be kept track of. This leads to the following pseudocode:
 ```
 macro window(R)
     2 * R + 1
@@ -116,7 +116,7 @@ In this case `oldest_val` is the sample which just outside of the current sampli
 
 For the signal being fed into the reverse template matching filter, $h[i]$, the domain varies from $i-R$ to $i+R$ so the input signal buffer size need only be equal to $2R + 1$. The computation is relatively simple so no optimizations are needed.
 
-Our final consideration is the value of $\theta$ in the threshold computation. The paper this algorithm is based upon states that "$\theta$ could be one-fourth of the statistical mean of the output of the low-pass filter", and they go on to use a pre-determined value calculated on their expansive database. Because we don't have this luxury, we leverage the fact that our second low-pass filter uses a large enough window size that the difference between its output and the true mean of the signal is negligible so we can set $\theta = l_2[i] / 4$ and compute it in real time.
+Our final consideration is the value of $\theta$ in the threshold computation. The paper this algorithm is based upon states that *$\theta$ could be one-fourth of the statistical mean of the output of the low-pass filter*, and they go on to use a pre-determined value calculated on their expansive database. Because we don't have this luxury, we leverage the fact that our second low-pass filter uses a large enough window size that the difference between its output and the true mean of the signal is negligible so we can set $\theta = l_2[i] / 4$ and compute it in real time.
 
 ### Idea graveyard
 **FIR Notch filter**:
