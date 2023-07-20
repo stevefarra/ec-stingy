@@ -119,11 +119,13 @@ For the signal being fed into the reverse template matching filter, $h[i]$, the 
 Our final consideration is the value of $\theta$ in the threshold computation. The paper this algorithm is based upon states that *$\theta$ could be one-fourth of the statistical mean of the output of the low-pass filter*, and they go on to use a pre-determined value calculated on their expansive database. Because we don't have this luxury, we leverage the fact that our second low-pass filter uses a large enough window size that the difference between its output and the true mean of the signal is negligible so we can set $\theta = l_2[i] / 4$ and compute it in real time.
 
 ### Idea graveyard
-**FIR Notch filter**:
+**More rigorous testing:**
 
-**Employ a state machine**: the current real-time program uses nested `if`-statements to ensure delays between cascaded filters and carry out the peak detection logic. A single state machine would increase code legibility and make debugging an easier task.
+**FIR Notch filter:**
 
-**Replace linear buffers with a deque**: the current implementation uses arrays as signal buffers that get shifted every sampling period once they're full. However, only 5 operations are needed to compute any filter in the R-peak detection algorithm:
+**Employ a state machine:** the current real-time program uses nested `if`-statements to ensure delays between cascaded filters and carry out the peak detection logic. A single state machine would increase code legibility and make debugging an easier task.
+
+**Replace linear buffers with a deque:** the current implementation uses arrays as signal buffers that get shifted every sampling period once they're full. However, only 5 operations are needed to compute any filter in the R-peak detection algorithm:
 
   - `peek_front()`
   - `pop_front()`

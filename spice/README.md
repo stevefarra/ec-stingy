@@ -10,7 +10,7 @@
 
 [`AD8232_cm.asc`](spice/AD8232_cm.asc) - An LTspice schematic for the AD8232 in the cardiac monitor configuration specified in the datasheet. This file contains simulation commands for both frequency and transient analyses.
 
-## Hertz So Good: Widening the filter passband
+## Ohm is Where the Heart is: Widening the filter passband
 
 This project uses the AD8232 to interface with the MCU and provide it with a signal suitable for the ADC. The datasheet for this IC provides several example configurations depending on the use case. We want to introduce minimal signal distortion at this stage and use as wide of a passband as possible for maximum versatility. The application circuit with the largest bandwidth is the cardiac monitor configuration, which employs a 0.5 Hz two-pole high-pass filter followed by a two-pole, 40 Hz low-pass filter.
 
