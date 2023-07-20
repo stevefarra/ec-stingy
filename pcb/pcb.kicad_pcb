@@ -420,7 +420,7 @@
       (net 11 "/HPSENSE") (pinfunction "HPSENSE") (pintype "bidirectional") (tstamp 12087284-393f-481c-a0e7-58784bce7ff7))
     (pad "PAD" smd roundrect locked (at 0 0) (size 2.5 2.5) (layers "F.Cu" "F.Mask") (roundrect_rratio 0.13)
       (net 4 "GND") (pinfunction "GND_PAD") (pintype "bidirectional") (tstamp a2e61d8c-a57b-4585-8157-48cf2c7e88d1))
-    (model "D:/Repositories/ec-stingy/pcb/AD8232/AD8232.step"
+    (model "D:/Repositories/ec-stingy/pcb/libraries/AD8232/AD8232.step"
       (offset (xyz 0 0 0))
       (scale (xyz 1 1 1))
       (rotate (xyz -90 0 0))
@@ -571,7 +571,7 @@
       (net 93 "unconnected-(J4-PadS1)") (pinfunction "SHIELD") (pintype "passive+no_connect") (tstamp 06aad713-6460-4bcd-b2ae-976248006d32))
     (pad "S3" thru_hole oval locked (at 0 2.15 270) (size 2.2 1.1) (drill oval 1.6 0.5) (layers *.Cu *.Mask)
       (net 93 "unconnected-(J4-PadS1)") (pinfunction "SHIELD") (pintype "passive+no_connect") (tstamp 28d209ae-0b78-4d41-bc6b-7f6401059f79))
-    (model "D:/Repositories/ec-stingy/pcb/105133-0011/105133-0011.step"
+    (model "D:/Repositories/ec-stingy/pcb/libraries/105133-0011/105133-0011.step"
       (offset (xyz 0 0 2.76))
       (scale (xyz 1 1 1))
       (rotate (xyz 180 0 0))
@@ -1112,7 +1112,7 @@
       (net 94 "unconnected-(SW1-PadS1)") (pinfunction "SHIELD") (pintype "passive+no_connect") (tstamp bc09f9ef-d4ad-4f3f-a173-03aea98ee12a))
     (pad "S4" smd rect locked (at 3.65 -0.965 270) (size 1 0.8) (layers "F.Cu" "F.Paste" "F.Mask")
       (net 94 "unconnected-(SW1-PadS1)") (pinfunction "SHIELD") (pintype "passive+no_connect") (tstamp adf51e13-b5a1-4e8a-a871-8750f67f453f))
-    (model "D:/Repositories/ec-stingy/pcb/PCM12SMTR/PCM12SMTR.step"
+    (model "${KIPRJMOD}/libraries/PCM12SMTR/PCM12SMTR.step"
       (offset (xyz 0 0 0))
       (scale (xyz 1 1 1))
       (rotate (xyz -90 0 0))
@@ -4424,7 +4424,7 @@
       (net 92 "unconnected-(U3-Pad20)") (pinfunction "~{TXT}/GPIO.2") (pintype "bidirectional+no_connect") (tstamp 8fa0f580-7a8d-420e-ba49-cde66690d7ca))
     (pad "21" smd rect locked (at 0 0 270) (size 1.8 1.8) (layers "F.Cu" "F.Mask")
       (net 4 "GND") (pinfunction "GND") (pintype "passive") (tstamp a0ee9703-4443-4fcf-af64-f546608e22be))
-    (model "D:/Repositories/ec-stingy/pcb/CP2102N-A02-GQFN20R/CP2102N-A02-GQFN20R.step"
+    (model "D:/Repositories/ec-stingy/pcb/libraries/CP2102N-A02-GQFN20R/CP2102N-A02-GQFN20R.step"
       (offset (xyz 0 0 0))
       (scale (xyz 1 1 1))
       (rotate (xyz -90 0 0))
@@ -4521,7 +4521,7 @@
       (net 21 "/RL") (pintype "passive") (tstamp 81ac4a1c-99a4-4856-9da4-edcea7ee0415))
     (pad "4" smd rect (at -1.9 -3.25 90) (size 1.2 2.5) (layers "F.Cu" "F.Paste" "F.Mask")
       (net 24 "/RA") (pintype "passive") (tstamp a17f73d2-e2a4-4c5c-bc46-2f6304bbef51))
-    (model "D:/Repositories/ec-stingy/pcb/PJ-320D-A/PJ-320D-A.step"
+    (model "D:/Repositories/ec-stingy/pcb/libraries/PJ-320D-A/PJ-320D-A.step"
       (offset (xyz 0 0 0))
       (scale (xyz 1 1 1))
       (rotate (xyz -90 0 0))
