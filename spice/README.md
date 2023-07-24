@@ -8,7 +8,7 @@
 
 [`AD8232.asy`](spice/AD8232.asy) - An LTspice symbol for the AD8232.
 
-[`AD8232_cm.asc`](spice/AD8232_cm.asc) - An LTspice schematic for the AD8232 in the cardiac monitor configuration specified in the datasheet. This file contains simulation commands for both frequency and transient analyses.
+[`ecg_front-end.asc`](spice/ecg_front-end.asc) - An LTspice schematic for the AD8232 in the cardiac monitor configuration specified in the datasheet. This file contains simulation commands for both frequency and transient analyses.
 
 ## Ohm is Where the Heart is: Widening the filter passband
 
@@ -57,4 +57,4 @@ At our current gain of $A_v = 11$, $C_2$ must remain several times larger than $
 ![ECG Bode plot final](../docs/visuals/spice_bode_mod.png)
 
 ## Idea Graveyard
-**Build an analog front-end from scratch**: The idea of building the required circuitry using discrete ICs was considered, but the bill of materials just for core functionality -- an in-amp, op-amps, and switches -- quickly exceeded the current price for an AD8232, not to mention the jump in complexity. Barring future supply chain issues, this approach was quickly deemed unnecessary.
+**Build an analog front-end from scratch**: The idea of building the required circuitry using discrete ICs was considered, but the bill of materials just for core functionality -- an in-amp, op-amps, and switches -- quickly exceeded the current price for an AD8232, not to mention the jump in complexity. A high-performance instrumentation amplifier with a high CMRR (common-mode rejection ratio) and low VOS (input offset voltage) already cranks up the priceBarring future supply chain issues, this approach was quickly deemed unnecessary.
