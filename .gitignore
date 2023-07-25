@@ -10,11 +10,11 @@ ecg.txt
 *.raw
 *.net
 
-# All directories starting with 'build'
-build*/
+# Qt build folder
+gui/build*/
 
 # Data file
-output.csv
+algorithm/output.csv
 
 # Build files
 algorithm/*.exe
