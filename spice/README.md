@@ -22,7 +22,7 @@ We start by simulating the provided cardiac monitor configuration and then modif
 
 ![SPICE bode plot](../docs/visuals/spice_bode.png)
 
-We also perform a transient analysis with a simulated ECG signal being sourced across the two leads:
+We also perform a transient analysis with a simulated ECG signal sourced across the two leads:
 
 ![Raw ECG](../docs/visuals/ecg_raw.png)
 
@@ -34,7 +34,7 @@ The filters have managed to remove the baseline wandering, added a DC offset, an
 
 ### High-pass filter modification
 
-This design uses the high-pass filter topology of figure 56, which includes an extra compensation resistor $R_\text{comp}$ to each lower cut-off frequencies with lower $R$ and $C$ values and finer control of the $Q$ factor. Deriving the transfer function from first principles is no trivial task because of the internal transconductance amplifiers and instrumentation amplifier in this stage. Luckily, the datasheet provides us with the cut-off frequency:
+This design uses the high-pass filter topology of figure 56 in the datasheet, which includes an extra compensation resistor $R_\text{comp}$ to each lower cut-off frequencies with lower $R$ and $C$ values and finer control of the $Q$ factor. Deriving the transfer function from first principles is no trivial task because of the internal transconductance amplifiers and instrumentation amplifier in this stage. Luckily, the datasheet provides us with the cut-off frequency:
 $$f_\text{c}=\frac{10}{2\pi \sqrt{R_1 C_1 R_2 C_2}}$$ And a recommended starting point for component value selection:
 $$R_1 = R_2 \geq 100\text{ k}\Omega$$ $$C_1 = C_2$$ $$R_\text{comp} = 0.14R_1$$ with the caveat that the above selection of $R_\text{comp}$ optimizes for a maximally flat passband and choosing a value too low can result in an unstable circuit. Our starting configuration of $R_1 = R_2 = 10\text{ M}\Omega$ and $C_1 = C_2 = 0.33 \text{ }\mu\text{F}$ results in a cut-off frequency of about 0.48 Hz. To get to our desired value we only need to lower our cut-off frequency by an order of magnitude. Because our resistors are already quite large and changing their values substantially could lead to higher-order effects, we'll instead increase the size of both capacitors by a factor of 10 to 3300 pF. In simulation this places the cut-off frequency at about 45 mHz, so this time we tweak the resistor values. A 2020 paper mentions that the IEC 60601 standard requires 1% component tolerances for medical devices, so we round down to a resistor value from the E96 series and find that 9.09 MΩ resistors places the cut-off frequency at about 49 mHz. We also adjust the compensation resistor according to the recommendation above and modify its value to 1.27 MΩ. With these modifications, we re-run the transient analysis:
 
@@ -58,3 +58,5 @@ At our current gain of $A_v = 11$, $C_2$ must remain several times larger than $
 
 ## Idea Graveyard
 **Build an analog front-end from scratch**: The idea of building the required circuitry using discrete ICs was considered, but the bill of materials just for core functionality -- an in-amp, op-amps, and switches -- quickly exceeded the current price for an AD8232, not to mention the jump in complexity. A high-performance instrumentation amplifier with a high CMRR (common-mode rejection ratio) and low VOS (input offset voltage) already cranks up the priceBarring future supply chain issues, this approach was quickly deemed unnecessary.
+
+**Choose resistor values to reduce the bill of materials:**

@@ -2,7 +2,7 @@
 ## Directory overview
 Several files containing project metadata are included in this directory, but the most important ones to be aware of are:
 
-[`pcb.kicad_pro`](pcb.kicad_pro): KiCad 6 project file. Use this to properly load and open the schematic and footprint files.
+[`pcb.kicad_pro`](pcb.kicad_pro): KiCad 6 project file. Use this to properly load and open the schematic and layout files.
 
 [`pcb.kicad_sch`](pcb.kicad_sch): The schematic file.
 

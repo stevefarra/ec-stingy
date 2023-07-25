@@ -93,6 +93,7 @@ We'll start by using the recursive definition of the moving average filter:
 $$\text{MA}(x[i],R):=\text{MA}(x[i-1],R)+\frac{1}{2R+1}\biggl(x[i+R]-x[i-(R+1)]\biggr)$$
 
 This is a lot more efficient, but still requires the first $2R+1$ outputs to be computed before the outputs are valid, so we use an accumulator to incrementally compute the average before "turning on" the subsequent filter. Also note that the centering of the window is irrelevant, and only the number of samples read must be kept track of. This leads to the following pseudocode:
+
 ```
 macro window(R)
     2 * R + 1
@@ -118,7 +119,7 @@ For the signal being fed into the reverse template matching filter, $h[i]$, the 
 
 Our final consideration is the value of $\theta$ in the threshold computation. The paper this algorithm is based upon states that *$\theta$ could be one-fourth of the statistical mean of the output of the low-pass filter*, and they go on to use a pre-determined value calculated on their expansive database. Because we don't have this luxury, we leverage the fact that our second low-pass filter uses a large enough window size that the difference between its output and the true mean of the signal is negligible so we can set $\theta = l_2[i] / 4$ and compute it in real time.
 
-### Idea graveyard
+### The Idea Graveyard
 **More rigorous testing:**
 
 **FIR Notch filter:**

@@ -17,7 +17,7 @@ build*/
 output.csv
 
 # Build files
-*.exe
+algorithm/*.exe
 
 # Cached files
 .DS_Store
