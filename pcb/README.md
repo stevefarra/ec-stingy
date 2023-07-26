@@ -30,7 +30,7 @@ We also added several peripherals to facilitate use and debugging:
 - An ECG signal pin header, to inspect the analog signal
 - LEDs to indicate a power connection and heartbeat readings, respectively
 
-The schematic ends up falling into roughly into 5 sections:
+The schematic ends up falling roughly into 5 sections:
 
 ![PCB Schematic](../docs/visuals/pcb_schematic.png)
 
