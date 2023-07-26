@@ -62,7 +62,7 @@ $$\hat{h}[i] = \text{ECG}[i] - \overline{\text{ECG}}[i]$$
 $$h[i] = |\hat{h}[i]|$$
 With DC noise and negative values forgone, we have a signal suitable for peak detection:
 
-![High pass filter](../visuals/high_pass_filter.png)
+![High pass filter](../docs/visuals/high_pass_filter.png)
 
 Next is the triangle filter, $t[i]=\text{TR}(h[i],s)$, which accentuates the QRS complex:
 
