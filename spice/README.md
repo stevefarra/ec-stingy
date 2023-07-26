@@ -8,7 +8,7 @@
 
 [`AD8232.asy`](spice/AD8232.asy) - An LTspice symbol for the AD8232.
 
-[`ecg_front-end.asc`](spice/ecg_front-end.asc) - An LTspice schematic for the AD8232 in the cardiac monitor configuration specified in the datasheet. This file contains simulation commands for both frequency and transient analyses.
+[`ecg_front-end.asc`](spice/ecg_front-end.asc) - This LTspice schematic configures the AD8232 as used on the PCB, containing simulation commands for both frequency and transient analyses.
 
 ## Ohm is Where the Heart is: Widening the filter passband
 
