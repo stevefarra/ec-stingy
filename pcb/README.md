@@ -49,7 +49,7 @@ With these principles in mind, a heavy draw of inspiration from the layout of th
 ## The cutting room floor
 **Commission a board review:** Despite passing KiCad's electrical and design rule checks, a third-party formal review could validate the schematic and layout. This review would ensure adherence to best practices on differential trace length matching, passive component sizing, and decoupling capacitor layout, helping to prevent potential costly or time-consuming errors before manufacturing.
 
-**Add more safeguards:** Replacing the PC power supply with an external battery, adding TVS diodes to sensitive traces for ESD protection, and using an optocoupler to provide electrical isolation between the patient and the ECG would all increase the device's overall safety.
+**Add more safeguards:** This device is far from being IEC 60601 compliant, but replacing the PC power supply with an external battery, adding TVS diodes to sensitive traces for ESD protection, and using an optocoupler to provide electrical isolation between the patient and the ECG would all increase the device's overall safety.
 
 **Compactify the layout:** The board size comes in at roughly 61 mm by 33 mm, but there is still quite a bit of unused space which could be used for more peripherals or done away with altogether by rearranging components.
 
