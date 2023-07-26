@@ -14,13 +14,13 @@ Each folder corresponds to a discrete stage of development or component of the f
 
 [`firmware/`](firmware/) - Contains the program loaded into the MCU on-board the PCB.
 
-[`spice/`](spice/) - Another simulation suite for prototyping the ECG analog front-end.
+[`spice/`](spice/) - Another simulation suite for prototyping the ECG analog front-end circuitry.
 
 [`pcb/`](pcb/) - Schematic, footprint, and manufacturing files for the printed circuit board.
 
 [`gui/`](gui/) - A desktop program to view the cardiac signal and heart rate readings over time.
 
-[`docs/`](gui/) - Datasheets, README graphics, and other miscellanea.
+[`docs/`](docs/) - Datasheets, README graphics, cited research papers, and other miscellanea.
 
 ## License
 

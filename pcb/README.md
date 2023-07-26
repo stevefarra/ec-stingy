@@ -1,6 +1,9 @@
 # PCB Design
+
+![3D PCB](../docs/visuals/pcb_3d.png)
+
 ## Directory overview
-Several files containing project metadata are included in this directory, but the most important ones to be aware of are:
+This directory includes several files with project metadata, but the key files are:
 
 [`pcb.kicad_pro`](pcb.kicad_pro): KiCad 6 project file. Use this to properly load and open the schematic and layout files.
 
@@ -13,12 +16,12 @@ Several files containing project metadata are included in this directory, but th
 [`manufacturing/`](manufacturing/): Contains a bill of materials, a component placement file, and gerber files required to get the board produced.
 
 ## V for Via: Establishing a workflow
-The overall design and microcontroller layout is heavily inspired by the [KiCad 6 STM32 tutorial](https://www.youtube.com/watch?v=aVUqaB0IMh4&pp=ygUNc3RtMzIga2ljYWQgNg%3D%3D) with a few notable additions:
+We heavily based the overall design and microcontroller layout on the [KiCad 6 STM32 tutorial](https://www.youtube.com/watch?v=aVUqaB0IMh4&pp=ygUNc3RtMzIga2ljYWQgNg%3D%3D), with several notable additions:
 
 - The AD8232 and all of its associated circuitry (a near replica of the SPICE model in this project)
 - The CP2102N USB-to-UART bridge controller, which acts as both a voltage regulator and PC interface in this design
 
-Several peripherals are also added for ease-of-use and debugging purposes:
+We also added several peripherals to facilitate use and debugging:
 
 - A micro-USB port, to power the board
 - A 3.5 mm jack, to plug the electrode cable into
@@ -43,15 +46,11 @@ With these principles in mind, a heavy draw of inspiration from the layout of th
 
 ![PCB Layout](../docs/visuals/pcb_layout.png)
 
-And its corresponding 3D model:
+## The cutting room floor
+**Commission a board review:** Despite passing KiCad's electrical and design rule checks, a third-party formal review could validate the schematic and layout. This review would ensure adherence to best practices on differential trace length matching, passive component sizing, and decoupling capacitor layout, helping to prevent potential costly or time-consuming errors before manufacturing.
 
-![3D PCB](../docs/visuals/pcb_3d.png)
-
-## The Cutting Room Floor
-**Get it reviewed:** Although this schematic and layout pass KiCad's electrical and design rule checkers, having a formal review done by a third-party to validate it and ensure it follows best-practices on aspects like differential trace length matching, passive component sizing, and decoupling capacitor layout would help avoid any potentially costly or time-consuming mistakes before submitting it to the manufacturer.
-
-**Add safeguards:** Replacing the PC power supply with an external battery, adding TVS diodes to sensitive traces for ESD protection, and using an optocoupler to provide electrical isolation between the patient and the ECG would all increase the device's overall safety.
+**Add more safeguards:** Replacing the PC power supply with an external battery, adding TVS diodes to sensitive traces for ESD protection, and using an optocoupler to provide electrical isolation between the patient and the ECG would all increase the device's overall safety.
 
 **Compactify the layout:** The board size comes in at roughly 61 mm by 33 mm, but there is still quite a bit of unused space which could be used for more peripherals or done away with altogether by rearranging components.
 
-**Design an enclosure:** A hard casing with cutouts to access the peripherals and to view the LEDs would be a nice addition to this project; the board already includes mounting holes that could be used to fasten it. KiCad's [StepUp](https://www.kicad.org/external-tools/stepup/) tool allows the 3D model above to be easily imported into FreeCAD and would come in handy here.
+**Design an enclosure:** A hard casing with cutouts for peripheral access and LED viewing could enhance this project. The board already has mounting holes for fastening. KiCad's [StepUp](https://www.kicad.org/external-tools/stepup/) tool allows the 3D model above to be easily imported into FreeCAD and would come in handy here.

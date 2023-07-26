@@ -1,6 +1,6 @@
 # SPICE simulations
 ## Directory overview
-[`ecgsyn.m`](spice/ecgsyn_m), [`derivsecgsyn.m`](spice/derivsecgsyn.m) - These are MATLAB scripts sourced from [ECGSYN](https://physionet.org/content/ecgsyn/1.0.0/), a realistic ECG waveform generator open-sourced under the GNU General Public License and used in this project by `gen_ecg.m`.
+[`ecgsyn.m`](spice/ecgsyn_m), [`derivsecgsyn.m`](spice/derivsecgsyn.m) - These are MATLAB scripts from [ECGSYN](https://physionet.org/content/ecgsyn/1.0.0/), a realistic ECG waveform generator. They are used in this project by `gen_ecg.m`.
 
 [`gen_ecg.m`](spice/gen_ecg.m) - An Octave script for generating an ECG waveform suitable for transient analysis in LTspice.
 
@@ -12,9 +12,9 @@
 
 ## Ohm is Where the Heart is: Widening the filter passband
 
-This project uses the AD8232 to interface with the MCU and provide it with a signal suitable for the ADC. The datasheet for this IC provides several example configurations depending on the use case. We want to introduce minimal signal distortion at this stage and use as wide of a passband as possible for maximum versatility. The application circuit with the largest bandwidth is the cardiac monitor configuration, which employs a 0.5 Hz two-pole high-pass filter followed by a two-pole, 40 Hz low-pass filter.
+This project employs the AD8232 to communicate with the MCU, providing a signal appropriate for the ADC. The datasheet for this IC provides several example configurations depending on the use case. We want to introduce minimal signal distortion at this stage and use as wide of a passband as possible for maximum versatility. The application circuit with the largest bandwidth is the cardiac monitor configuration, which employs a 0.5 Hz two-pole high-pass filter followed by a two-pole, 40 Hz low-pass filter.
 
-This configuration is a good starting point for our own design but will be insufficient for diagnostic purposes. As [this paper from 2012](https://pubmed.ncbi.nlm.nih.gov/22778996/) points out, interpretation of the ST segment of an ECG should only be carried out with a cut-off frequency of 0.05 Hz, as 0.5 Hz introduces considerable distortion to this particular segment.
+This configuration is a good starting point for our own design but will be insufficient for diagnostic purposes. A [2012 paper](../docs/paper/High-Bandpass_Filters_Electrocardiography_ST_Segment_Error.pdf) points out that interpreting the ST segment of an ECG should involve a cut-off frequency of 0.05 Hz. Higher frequencies like 0.5 Hz can significantly distort this segment.
 
 Although there doesn't seem to be a definitive cut-off on the high end, most sources suggest clinical ECGs typically have a cut-off of 100 or 150 Hz. There may be good reason to extend even further; recent research suggests that detection of myocardial ischemia, a certain heart condition, is improved through high-frequency QRS analysis, which commonly occurs in the frequency range between 150 and 250 Hz according to this 2012 paper. This extends far beyond our Nyquist frequency of 180 Hz, however, so to avoid changing our sample rate and diverging from industry standards we'll aim for a high pass frequency cut-off of 150 Hz.
 
@@ -34,7 +34,7 @@ The filters have managed to remove the baseline wandering, added a DC offset, an
 
 ### High-pass filter modification
 
-This design uses the high-pass filter topology of figure 56 in the datasheet, which includes an extra compensation resistor $R_\text{comp}$ to each lower cut-off frequencies with lower $R$ and $C$ values and finer control of the $Q$ factor. Deriving the transfer function from first principles is no trivial task because of the internal transconductance amplifiers and instrumentation amplifier in this stage. Luckily, the datasheet provides us with the cut-off frequency:
+Our design uses the high-pass filter topology from figure 56 of the datasheet. This includes an extra compensation resistor $R_\text{comp}$, enabling lower cut-off frequencies with reduced $R$ and $C$ values and finer control of the $Q$ factor. Deriving the transfer function from first principles is no trivial task because of the internal transconductance amplifiers and instrumentation amplifier in this stage. Luckily, the datasheet provides us with the cut-off frequency:
 $$f_\text{c}=\frac{10}{2\pi \sqrt{R_1 C_1 R_2 C_2}}$$ And a recommended starting point for component value selection:
 $$R_1 = R_2 \geq 100\text{ k}\Omega$$ $$C_1 = C_2$$ $$R_\text{comp} = 0.14R_1$$ with the caveat that the above selection of $R_\text{comp}$ optimizes for a maximally flat passband and choosing a value too low can result in an unstable circuit. Our starting configuration of $R_1 = R_2 = 10\text{ M}\Omega$ and $C_1 = C_2 = 0.33 \text{ }\mu\text{F}$ results in a cut-off frequency of about 0.48 Hz. To get to our desired value we only need to lower our cut-off frequency by an order of magnitude. Because our resistors are already quite large and changing their values substantially could lead to higher-order effects, we'll instead increase the size of both capacitors by a factor of 10 to 3300 pF. In simulation this places the cut-off frequency at about 45 mHz, so this time we tweak the resistor values. A 2020 paper mentions that the IEC 60601 standard requires 1% component tolerances for medical devices, so we round down to a resistor value from the E96 series and find that 9.09 MΩ resistors places the cut-off frequency at about 49 mHz. We also adjust the compensation resistor according to the recommendation above and modify its value to 1.27 MΩ. With these modifications, we re-run the transient analysis:
 
@@ -57,6 +57,6 @@ At our current gain of $A_v = 11$, $C_2$ must remain several times larger than $
 ![ECG Bode plot final](../docs/visuals/spice_bode_mod.png)
 
 ## Idea Graveyard
-**Build an analog front-end from scratch**: The idea of building the required circuitry using discrete ICs was considered, but the bill of materials just for core functionality -- an in-amp, op-amps, and switches -- quickly exceeded the current price for an AD8232, not to mention the jump in complexity. A high-performance instrumentation amplifier with a high CMRR (common-mode rejection ratio) and low VOS (input offset voltage) already cranks up the priceBarring future supply chain issues, this approach was quickly deemed unnecessary.
+**Build an analog front-end from scratch**: The idea of building the required circuitry using discrete ICs was considered, but the bill of materials just for core functionality -- an in-amp, op-amps, and switches -- quickly exceeded the current price for an AD8232, not to mention the jump in complexity. A high-performance instrumentation amplifier with a high CMRR (common-mode rejection ratio) and low VOS (input offset voltage) already cranks up the price. Barring future supply chain issues, this approach was quickly deemed unnecessary.
 
-**Choose resistor values to reduce the bill of materials:**
+**Optimize the bill of materials:** While we chose filtering circuit components solely for performance, we could decrease manufacturing costs at scale by reducing the number of different parts and identifying where tolerances can be more relaxed.
