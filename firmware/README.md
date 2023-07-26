@@ -44,7 +44,7 @@ These parts can be connected using only jumper wires and a breadboard in the fol
 
 </div>
 
-Not included in this diagram is the electrode cable attached to the audio jack breakout board, and a simple 9V battery snap connector attached to a Duracell CopperTop which powers the regulator. The Nucleo development board connects to a PC using a micro-USB cable. 
+Not included in this diagram is the electrode cable attached to the 3.5 mm jack breakout board, and a simple 9V battery snap connector attached to a Duracell CopperTop which powers the regulator. The Nucleo development board connects to a PC using a micro-USB cable. 
 
 ## The idea graveyard
 
