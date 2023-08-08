@@ -136,3 +136,5 @@ Our final consideration is the value of $\theta$ in the threshold computation. T
   - `peak_middle()`
   
   A double-ended queue could be implemented to easily include these functions. Doing so would mean we wouldn't waste so many clock cycles shifting arrays. However, a deque requires storing the memory address of each node. Given that RAM size is a more restrictive factor than processing power in our case, we chose to use linear buffers. This keeps the stack size under 5 kB.
+
+  ## References

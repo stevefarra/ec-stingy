@@ -46,10 +46,26 @@ With these principles in mind, a heavy draw of inspiration from the layout of th
 
 ![PCB Layout](../docs/visuals/pcb_layout.png)
 
+## How cost-effective is it, really?
+Time and effort were put into ensuring that the components chosen were economical and readily available to reduce the manufacturing cost as much as possible. Below is a breakdown of the per-board manufacturing costs at the time of writing this, ordering from JLCPCB (minimum quantity of 5):
+
+<div align="center">
+
+| Category   | Cost (CAD) |
+|------------|------------|
+| Passives   | 0.50       |
+| Connectors | 1.13       |
+| ICs        | 6.86       |
+| Assembly   | 3.07       |
+
+</div>
+
+Although it's difficult to directly compare this device to commercially-available products, the closest would be a Holter monitor like the [Prince 180B1 from Heal Force](http://www.healforce.com/en/html/products/portableecgmonitors/605.html) which currently retails at \$140 CAD. The total cost of our board comes to $11.56 CAD, which is roughly 9% of the market equivalent. Not bad!
+
 ## The cutting room floor
 **Commission a board review:** Despite passing KiCad's electrical and design rule checks, a third-party formal review could validate the schematic and layout. This review would also ensure adherence to best practices on differential trace length matching, passive component sizing, and decoupling capacitor layout, helping to prevent potential costly or time-consuming errors before manufacturing.
 
-**Add more safeguards:** This device is far from being IEC 60601 compliant, but replacing the PC power supply with an external battery, adding TVS diodes to sensitive traces for ESD protection, and using an optocoupler to provide electrical isolation between the patient and the ECG would all increase the device's overall safety.
+**Add more safeguards:** This device is far from being fully IEC 60601-compliant, but replacing the PC power supply with an external battery, adding TVS diodes to sensitive traces for ESD protection, and using an optocoupler to provide electrical isolation between the patient and the ECG would all increase the device's overall safety.
 
 **Compactify the layout:** The board size comes in at roughly 61 mm by 33 mm, but there is still quite a bit of unused space which could be used for more peripherals or done away with altogether by rearranging components.
 
