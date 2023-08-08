@@ -33,7 +33,7 @@ Here is the resultant signal, which now has something resembling a P-wave. The D
 ![Filtered ECG signal](../docs/visuals/ecg_signal_filtered.png)
 
 ### A Tribe Called QRS: Implementing heart rate detection
-Every prominent R-peak detection algorithm has three distinct stages: signal conditioning, thresholding, and R-peak searching. This project uses an [algorithm published in 2019](../docs/papers/Low_Resource_R-Peak_Detection_Triangle_Template_Match_Moving_Avg_Filter.pdf) that improves upon previous approaches by introducing a triangle template matching filter to reduce the resource complexity present in other algorithms used in embedded devices. 
+Every prominent R-peak detection algorithm has three distinct stages: signal conditioning, thresholding, and R-peak searching. This project uses an algorithm by Nguyen at al. that improves upon previous approaches by introducing a triangle template matching filter to reduce the resource complexity present in other algorithms used in embedded devices ([5](#references)). 
 
 The signal conditioning filters depend on a set of parameters that depend on the sampling frequency $f_\text{s}$. The paper provides their recommendations for the canonical rate of $f_\text{s} = \text{360 Hz}$ as well as a procedure for determining some of them given $f_\text{s}$.
 
@@ -137,4 +137,6 @@ Our final consideration is the value of $\theta$ in the threshold computation. T
   
   A double-ended queue could be implemented to easily include these functions. Doing so would mean we wouldn't waste so many clock cycles shifting arrays. However, a deque requires storing the memory address of each node. Given that RAM size is a more restrictive factor than processing power in our case, we chose to use linear buffers. This keeps the stack size under 5 kB.
 
-  ## References
+## <a name="references"></a>References
+
+[1]: T. Nguyen, X. Qin, A. Dinh, and F. Bui, "Low Resource Complexity R-peak Detection Based on Triangle Template Matching and Moving Average Filter," in *Sensors*, vol. 19, no. 18, article 3997, 2019. [Access Article](https://doi.org/10.3390/s19183997)
