@@ -19,10 +19,13 @@
 
 The specifications are straightforward: The GUI reads comma-separated integer data from the serial port sent at a sampling frequency of 360 Hz. The first integer represents the ECG signal, and the second, if available, represents the most recent heart rate reading in BPM. Both are displayed on separate plots.
 
-Given the importance of processing speed and real-time data interaction, we chose C++ for implementation. To help navigate the large overhead and inherent complexities of the language, [GPT-4 comes to the rescue](https://chat.openai.com/share/ca196f5d-4867-4609-83e8-bf3a4e4dab14) by providing assistance every step of the way, from set-up to (incremental) development, debugging, and documentation.
+Given the importance of processing speed and real-time data interaction, we chose C++ for implementation. To help navigate the large overhead and inherent complexities of the language, GPT-4 comes to the rescue by providing assistance every step of the way, from set-up to (incremental) development, debugging, and documentation ([1](#references)).
 
 ## Next steps
 
 **Add a menu:** While this GUI serves as a proof-of-concept, enhancing UX could involve adding numerous features. Some sort of interface to reset the plots, toggle data collection, or modify the appearance would be a good starting point.
 
 **Make it cross-platform:** Currently, the project build supports only Windows. However, for broader support, consider using [Qt's macOS support](https://doc.qt.io/qt-6/macos.html) through Xcode.
+
+## <a name="references"></a>References
+[1]: OpenAI, "ChatGPT transcript," 2023. [Online]. Available: [ChatGPT Transcript](https://chat.openai.com/share/ca196f5d-4867-4609-83e8-bf3a4e4dab14). [Accessed: 25-July-2023].

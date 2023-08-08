@@ -51,12 +51,12 @@ Time and effort were put into ensuring that the components chosen were economica
 
 <div align="center">
 
-| Category   | Cost (CAD) |
-|------------|------------|
-| Passives   | 0.50       |
-| Connectors | 1.13       |
-| ICs        | 6.86       |
-| Assembly   | 3.07       |
+| Category   | Cost (CAD)  |
+|------------|-------------|
+| Passives   | $0.50       |
+| Connectors | $1.13       |
+| ICs        | $6.86       |
+| Assembly   | $3.07       |
 
 </div>
 

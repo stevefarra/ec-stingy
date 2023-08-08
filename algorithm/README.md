@@ -33,7 +33,7 @@ Here is the resultant signal, which now has something resembling a P-wave. The D
 ![Filtered ECG signal](../docs/visuals/ecg_signal_filtered.png)
 
 ### A Tribe Called QRS: Implementing heart rate detection
-Every prominent R-peak detection algorithm has three distinct stages: signal conditioning, thresholding, and R-peak searching. This project uses an algorithm by Nguyen at al. that improves upon previous approaches by introducing a triangle template matching filter to reduce the resource complexity present in other algorithms used in embedded devices ([5](#references)). 
+Every prominent R-peak detection algorithm has three distinct stages: signal conditioning, thresholding, and R-peak searching. This project uses an algorithm by Nguyen at al. that improves upon previous approaches by introducing a triangle template matching filter to reduce the resource complexity present in other algorithms used in embedded devices ([1](#references)). 
 
 The signal conditioning filters depend on a set of parameters that depend on the sampling frequency $f_\text{s}$. The paper provides their recommendations for the canonical rate of $f_\text{s} = \text{360 Hz}$ as well as a procedure for determining some of them given $f_\text{s}$.
 
